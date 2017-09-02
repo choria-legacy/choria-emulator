@@ -31,11 +31,11 @@ func (self *DiscoveryAgent) Name() string {
 	return self.name
 }
 
-func (self *DiscoveryAgent) HandleAgentMsg(msg string) ([]byte, error) {
+func (self *DiscoveryAgent) HandleAgentMsg(msg string) (*[]byte, error) {
 	if strings.Contains(msg, "ping") {
-		return []byte("ping"), nil
+		r := []byte("pong")
+		return &r, nil
 	}
 
-	return []byte(""), fmt.Errorf("unknown request: %s", msg)
+	return nil, fmt.Errorf("unknown request: %s", msg)
 }
-

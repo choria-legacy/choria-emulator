@@ -20,9 +20,40 @@ Flags:
       --version              Show application version.
       --name=NAME            Instance name
   -i, --instances=INSTANCES  Number of instances to start
-  -a, --agents=AGENTS        Number of emulated agents to start
+  -a, --agents=1             Number of emulated agents to start
+      --collectives=1        Number of emulated subcollectives to create
   -c, --config=CONFIG        Choria configuration file
       --tls                  Enable TLS on the NATS connections
       --verify               Enable TLS certificate verifications on the NATS connections
       --server=SERVER ...    NATS Server pool, specify multiple times (eg one:4222)
 ```
+
+## Agents
+When you specify the creation of 10 agents you will get a series of agents called `emulated0`, `emulated1` and so forth.
+
+These agents are all identical and have just one action `generate` that takes a `size` argument. It will create a reply message with a string reply equal in size to what was requested.
+
+This is good test the impact of varying sizes of payload on your infrastructure.
+
+Additionally it has the standard `discovery` agent so `mco ping` and so forth works.  Filters wise it only support the `agent` filter which is sufficient for this kind of testing.
+
+```
+$ mco rpc emulated0 generate size=100 -I test-1 -j
+[
+  {
+    "agent": "emulated0",
+    "action": "generate",
+    "sender": "test-1",
+    "statuscode": 0,
+    "statusmsg": "OK",
+    "data": {
+      "message": "0123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789"
+    }
+  }
+]
+```
+
+## Subcollectives
+Subcollectives are supported, by default it belongs to the typical `mcollective` sub collective.
+
+If you ask if to belong to more than 3 using the `--collectives` option it will subscribe to collectives `mcollective`, `collective1` and `collective2`.

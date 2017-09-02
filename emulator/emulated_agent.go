@@ -55,7 +55,9 @@ func (self *EmulatedAgent) Init() error {
 
 func (self *EmulatedAgent) newReply() *RPCReply {
 	reply := &RPCReply{
-		Data: &RPCReplyData{},
+		Statuscode: 0,
+		Statusmsg:  "OK",
+		Data:       &RPCReplyData{},
 	}
 
 	return reply
@@ -72,11 +74,11 @@ func (self *EmulatedAgent) requestFromMsg(msg string) (*RPCRequestBody, error) {
 	return r, nil
 }
 
-func (self *EmulatedAgent) HandleAgentMsg(msg string) ([]byte, error) {
+func (self *EmulatedAgent) HandleAgentMsg(msg string) (*[]byte, error) {
 	reply := self.newReply()
 	request, err := self.requestFromMsg(msg)
 	if err != nil {
-		return []byte{}, err
+		return nil, err
 	}
 
 	switch request.Action {
@@ -92,7 +94,7 @@ func (self *EmulatedAgent) HandleAgentMsg(msg string) ([]byte, error) {
 		log.Errorf("Could not marshall JSON reply: %s", err.Error())
 	}
 
-	return j, nil
+	return &j, nil
 }
 
 func (self *EmulatedAgent) generateAction(request *RPCRequestBody, reply *RPCReply) {

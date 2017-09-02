@@ -20,7 +20,7 @@ type ChoriaEmulationInstance struct {
 type Agent interface {
 	Init() error
 	Name() string
-	HandleAgentMsg(msg string) ([]byte, error)
+	HandleAgentMsg(msg string) (*[]byte, error)
 }
 
 func NewInstance(choria *mcollective.Choria, overrideServers []mcollective.Server) (i *ChoriaEmulationInstance, err error) {
@@ -32,16 +32,18 @@ func NewInstance(choria *mcollective.Choria, overrideServers []mcollective.Serve
 	logger := log.WithFields(log.Fields{"emulator": i.name})
 
 	servers := func() ([]mcollective.Server, error) {
-		if overrideServers != nil {
+		if len(overrideServers) > 0 {
 			return overrideServers, nil
 		}
 
 		return i.choria.MiddlewareServers()
 	}
 
-	_, err = i.choria.MiddlewareServers()
-	if err != nil {
-		return nil, fmt.Errorf("Could not find initial NATS servers: %s", err.Error())
+	if len(overrideServers) > 0 {
+		_, err = i.choria.MiddlewareServers()
+		if err != nil {
+			return nil, fmt.Errorf("Could not find initial NATS servers: %s", err.Error())
+		}
 	}
 
 	i.connector, err = choria.NewConnector(servers, i.name, logger)
@@ -108,18 +110,18 @@ func (self *ChoriaEmulationInstance) ProcessRequests(wg *sync.WaitGroup) {
 		}
 
 		if filter, ok := request.Filter(); ok {
-			found := true
+			process := true
 
 			if len(filter.AgentFilters()) > 0 {
 				for _, agent := range filter.AgentFilters() {
 					if _, ok := self.agents[agent]; !ok {
 						log.Warnf("Ignoring message due to agent filter: %s", agent)
-						found = false
+						process = false
 					}
 				}
 			}
 
-			if !found {
+			if !process {
 				continue
 			}
 		}
@@ -138,6 +140,7 @@ func (self *ChoriaEmulationInstance) subscribeNode() {
 	for _, collective := range self.choria.Config.Collectives {
 		target := fmt.Sprintf("%s.node.%s", collective, self.name)
 		self.connector.Subscribe("node", target, "")
+		// log.Debugf("Subscribed to %s", target)
 	}
 }
 
@@ -146,6 +149,7 @@ func (self *ChoriaEmulationInstance) subscribeAgents() {
 		for _, agent := range self.agents {
 			target := fmt.Sprintf("%s.broadcast.agent.%s", collective, agent.Name())
 			self.connector.Subscribe(fmt.Sprintf("agent.%s", agent), target, "")
+			log.Debugf("Subscribed to %s", target)
 		}
 	}
 }
@@ -163,7 +167,7 @@ func (self *ChoriaEmulationInstance) dispatch(msg *mcollective.Message, request 
 		return
 	}
 
-	reply, err := self.choria.NewMessage(string(rawreply), msg.Agent, msg.Collective(), "reply", msg)
+	reply, err := mcollective.NewMessage(string(*rawreply), msg.Agent, msg.Collective(), "reply", msg, self.choria)
 	if err != nil {
 		log.Warnf("Could not create Reply Message: %s", err.Error())
 		return
