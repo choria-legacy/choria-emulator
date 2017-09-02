@@ -1,19 +1,24 @@
 package cmd
 
 import (
+	"expvar"
 	"fmt"
+	"net/http"
 	"os"
 	"sync"
 
+	log "github.com/sirupsen/logrus"
+	kingpin "gopkg.in/alecthomas/kingpin.v2"
+
 	"github.com/choria-io/choria-emulator/emulator"
 	"github.com/choria-io/go-choria/mcollective"
-	kingpin "gopkg.in/alecthomas/kingpin.v2"
 )
 
 var (
 	instanceCount   int
 	agentCount      int
 	collectiveCount int
+	statusPort      int
 	name            string
 	configFile      string
 	enableTLS       bool
@@ -25,35 +30,18 @@ var (
 	instances       []*emulator.ChoriaEmulationInstance
 )
 
-func parseServers() ([]mcollective.Server, error) {
-	s, err := mcollective.StringHostsToServers(servers, "nats")
+func Run() {
+	parseCLI()
 
-	return s, err
+	initChoria()
+
+	go startHTTP()
+	startInstances()
+
+	wg.Wait()
 }
 
-func Run() {
-	app := kingpin.New("choria-emulator", "Emulator for Choria Networks")
-	app.Author("R.I.Pienaar <rip@devco.net>")
-	app.Version("0.0.1")
-	app.Flag("name", "Instance name").Required().StringVar(&name)
-	app.Flag("instances", "Number of instances to start").Short('i').Required().IntVar(&instanceCount)
-	app.Flag("agents", "Number of emulated agents to start").Short('a').Default("1").IntVar(&agentCount)
-	app.Flag("collectives", "Number of emulated subcollectives to create").Default("1").IntVar(&collectiveCount)
-	app.Flag("config", "Choria configuration file").Short('c').StringVar(&configFile)
-	app.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
-	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
-	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
-
-	kingpin.MustParse(app.Parse(os.Args[1:]))
-
-	if configFile == "" {
-		configFile = mcollective.UserConfig()
-	}
-
-	if choria, err = mcollective.New(configFile); err != nil {
-		panic(fmt.Sprintf("Could not initialize Choria: %s", err.Error()))
-	}
-
+func startInstances() {
 	for instance := 0; instance <= instanceCount-1; instance++ {
 		ichoria, err := mcollective.New(choria.Config.ConfigFile)
 		if err != nil {
@@ -98,6 +86,66 @@ func Run() {
 
 		go emu.ProcessRequests(&wg)
 	}
+}
 
-	wg.Wait()
+func parseServers() ([]mcollective.Server, error) {
+	s, err := mcollective.StringHostsToServers(servers, "nats")
+
+	return s, err
+}
+
+func startHTTP() {
+	exportConfig()
+
+	port := fmt.Sprintf(":%d", statusPort)
+	log.Infof("Starting to listen on HTTP %s", port)
+	log.Fatal(http.ListenAndServe(port, nil))
+}
+
+func exportConfig() {
+	expvar.NewString("name").Set(name)
+	c := expvar.NewMap("config")
+	c.Add("instances", int64(instanceCount))
+	c.Add("agents", int64(agentCount))
+	c.Add("collectives", int64(collectiveCount))
+	c.Add("pid", int64(os.Getpid()))
+
+	if enableTLS {
+		c.Add("TLS", 1)
+	} else {
+		c.Add("TLS", 0)
+	}
+
+	if enableTLSVerify {
+		c.Add("tlsVerify", 1)
+	} else {
+		c.Add("tlsVerify", 0)
+	}
+}
+
+func parseCLI() {
+	app := kingpin.New("choria-emulator", "Emulator for Choria Networks")
+	app.Author("R.I.Pienaar <rip@devco.net>")
+	app.Version("0.0.1")
+	app.Flag("name", "Instance name prefix").Required().StringVar(&name)
+	app.Flag("instances", "Number of instances to start").Short('i').Required().IntVar(&instanceCount)
+	app.Flag("agents", "Number of emulated agents to start").Short('a').Default("1").IntVar(&agentCount)
+	app.Flag("collectives", "Number of emulated subcollectives to create").Default("1").IntVar(&collectiveCount)
+	app.Flag("config", "Choria configuration file").Short('c').StringVar(&configFile)
+	app.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
+	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
+	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
+	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
+
+	kingpin.MustParse(app.Parse(os.Args[1:]))
+}
+
+func initChoria() {
+	if configFile == "" {
+		configFile = mcollective.UserConfig()
+	}
+
+	if choria, err = mcollective.New(configFile); err != nil {
+		panic(fmt.Sprintf("Could not initialize Choria: %s", err.Error()))
+	}
 }
