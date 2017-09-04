@@ -30,6 +30,23 @@ var (
 	instances       []*emulator.ChoriaEmulationInstance
 )
 
+func parseCLI() {
+	app := kingpin.New("choria-emulator", "Emulator for Choria Networks")
+	app.Author("R.I.Pienaar <rip@devco.net>")
+	app.Version("0.0.1")
+	app.Flag("name", "Instance name prefix").Required().StringVar(&name)
+	app.Flag("instances", "Number of instances to start").Short('i').Required().IntVar(&instanceCount)
+	app.Flag("agents", "Number of emulated agents to start").Short('a').Default("1").IntVar(&agentCount)
+	app.Flag("collectives", "Number of emulated subcollectives to create").Default("1").IntVar(&collectiveCount)
+	app.Flag("config", "Choria configuration file").Short('c').StringVar(&configFile)
+	app.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
+	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
+	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
+	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
+
+	kingpin.MustParse(app.Parse(os.Args[1:]))
+}
+
 func Run() {
 	parseCLI()
 
@@ -121,23 +138,6 @@ func exportConfig() {
 	} else {
 		c.Add("tlsVerify", 0)
 	}
-}
-
-func parseCLI() {
-	app := kingpin.New("choria-emulator", "Emulator for Choria Networks")
-	app.Author("R.I.Pienaar <rip@devco.net>")
-	app.Version("0.0.1")
-	app.Flag("name", "Instance name prefix").Required().StringVar(&name)
-	app.Flag("instances", "Number of instances to start").Short('i').Required().IntVar(&instanceCount)
-	app.Flag("agents", "Number of emulated agents to start").Short('a').Default("1").IntVar(&agentCount)
-	app.Flag("collectives", "Number of emulated subcollectives to create").Default("1").IntVar(&collectiveCount)
-	app.Flag("config", "Choria configuration file").Short('c').StringVar(&configFile)
-	app.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
-	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
-	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
-	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
-
-	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
 
 func initChoria() {
