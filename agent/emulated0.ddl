@@ -4,7 +4,7 @@ metadata    :name        => "emulated0",
             :license     => "Apache-2.0",
             :version     => "0.0.1",
             :url         => "http://choria.io",
-            :timeout     => 120
+            :timeout     => 20
 
 requires :mcollective => "2.9.0"
 

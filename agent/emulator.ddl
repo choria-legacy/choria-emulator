@@ -8,7 +8,7 @@ metadata :name        => "emulator",
 
 requires :mcollective => "2.9.0"
 
-action "status", :description => "Status of the running emulator" do
+action "emulator_status", :description => "Status of the running emulator" do
   display :always
 
   input :port,
@@ -43,32 +43,52 @@ action "status", :description => "Status of the running emulator" do
          :display_as => "Memory (B)",
          :default => 0
 
+  output :emulator,
+         :description => "md5 hash of emulator binary",
+         :display_as => "Emulator",
+         :default => ""
+
   summarize do
     aggregate summary(:running)
     aggregate summary(:tls)
+    aggregate summary(:emulator)
   end
 end
 
 action "download", :description => "Downloads the emulator binary" do
   input :http,
         :description => "HTTP or HTTPS URL to fetch the file from",
-        :prompt => "Emulator source URL",
+        :prompt => "Source URL",
         :type => :string,
         :optional => false,
         :maxlength => "256",
         :validation => "."
 
+  input :target,
+        :description => "Name under /tmp/choria-emulator",
+        :prompt => "Downloaded file to be stored here",
+        :type => :string,
+        :optional => false,
+        :maxlength => "256",
+        :validation => '^[a-zA-Z\d\.-]+$'
+
   output :success,
-         :description => "true if the emulator was downloaded",
+         :description => "true if the file was downloaded successfully",
          :display_as => "Downloaded"
 
   output :size,
          :description => "Size of file downloaded",
          :display_as => "Size"
 
+  output :md5,
+         :description => "md5 hash of downloaded file",
+         :display_as => "MD5",
+         :default => ""
+
   summarize do
     aggregate summary(:success)
     aggregate summary(:size)
+    aggregate summary(:md5)
   end
 end
 
@@ -123,7 +143,7 @@ action "start", :description => "Start an emulator instance" do
         :prompt => "Servers to connect to",
         :description => "Comma separated list of host:port pairs",
         :type => :string,
-        :maxlength => "256",
+        :maxlength => 256,
         :optional => true,
         :validation => "."
 
@@ -149,3 +169,89 @@ action "start", :description => "Start an emulator instance" do
     aggregate summary(:status)
   end
 end
+
+action "start_nats", :description => "Start a local NATS instance" do
+  input :port,
+        :prompt => "Client Port",
+        :description => "Port for clients to connect to",
+        :default => 4222,
+        :type => :integer,
+        :optional => false
+
+  input :monitor_port,
+        :prompt => "Monitor Port",
+        :description => 8222,
+        :type => :integer,
+        :optional => false
+
+  output :running,
+         :description => "true if the NATS started",
+         :display_as => "Started"
+
+  summarize do
+    aggregate summary(:running)
+  end
+end
+
+action "stop_nats", :description => "Stops a running NATS instance" do
+  output :stopped,
+         :description => "true if the NATS stopped",
+         :display_as => "Stopped"
+
+  summarize do
+    aggregate summary(:stopped)
+  end
+end
+
+action "start_federation", :description => "Start a local Federation Broker instance" do
+  input :name,
+        :description => "The Collective Name this broker will serve",
+        :prompt => "Collective Name",
+        :type => :string,
+        :maxlength => 50,
+        :optional => true,
+        :validation => '.+'
+
+  input :tls,
+        :description => "Run with TLS enabled",
+        :prompt => "TLS",
+        :type => :boolean,
+        :optional => false,
+        :default => false
+
+  input :federation_servers,
+        :description => "Federation NATS Servers, comma separated list of host:port pairs",
+        :prompt => "Federation Servers",
+        :type => :string,
+        :optional => false,
+        :maxlength => 256,
+        :validation => '.+'
+
+  input :collective_servers,
+        :description => "Collective NATS Servers, comma separated list of host:port pairs",
+        :prompt => "Collective Servers",
+        :type => :string,
+        :optional => false,
+        :maxlength => 256,
+        :validation => '.+',
+        :default => "localhost:4222"
+
+  output :running,
+         :description => "true if the Federation Broker started",
+         :display_as => "Started"
+
+  summarize do
+    aggregate summary(:running)
+  end
+end
+
+action "stop_federation", :description => "Stops a running Federation Broker instance" do
+  output :stopped,
+         :description => "true if the Federation Broker stopped",
+         :display_as => "Stopped"
+
+  summarize do
+    aggregate summary(:stopped)
+  end
+end
+
