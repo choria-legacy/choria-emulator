@@ -9,26 +9,29 @@ module MCollective
         FileUtils.mkdir_p("/tmp/choria-emulator")
 
         if request[:http]
+          target = File.join("/tmp/choria-emulator", request[:target])
+
           begin
-            download_http(request[:http], "/tmp/choria-emulator/choria-emulator")
+            download_http(request[:http], target)
           rescue
             reply.fail!("Failed to download %s: %s: %s" % [request[:http], $!.class, $!.to_s])
           end
 
-          FileUtils.chmod(0755, "/tmp/choria-emulator/choria-emulator")
-
-          stat = File::Stat.new("/tmp/choria-emulator/choria-emulator")
+          stat = File::Stat.new(target)
           reply[:size] = stat.size
           reply[:success] = true
+          reply[:md5] = md5(target)
         else
           reply.fail("No valid download location given")
         end
       end
 
       action "start" do
-        unless File.executable?("/tmp/choria-emulator/choria-emulator")
-          reply.fail!("Cannot start /tmp/choria-emulator/choria-emulator does not exist or is not executable")
+        unless File.exist?("/tmp/choria-emulator/choria-emulator")
+          reply.fail!("Cannot start /tmp/choria-emulator/choria-emulator does not exist")
         end
+
+        FileUtils.chmod(0755, "/tmp/choria-emulator/choria-emulator")
 
         if up?(request[:monitor])
           reply.fail!("Cannot start, emulator is already running")
@@ -36,10 +39,15 @@ module MCollective
 
         args = []
 
-        args << "--name %s" % request[:name]
         args << "--instances %d" % request[:instances]
         args << "--http-port %d" % request[:monitor]
         args << "--config /dev/null"
+
+        if request[:name]
+          args << "--name %s" % request[:name]
+        else
+          args << "--name %s" % config.identity
+        end
 
         args << "--agents %d" % request[:agents] if request[:agents]
         args << "--collectives %d" % request[:collectives] if request[:collectives]
@@ -57,7 +65,25 @@ module MCollective
         reply[:status] = up?(request[:monitor])
       end
 
-      action "status" do
+      action "stop" do
+        reply[:status] = false
+
+        if up?(request[:port])
+          pid = emulator_pid(request[:port])
+
+          reply.fail!("Could not determine PID for running emulator") unless pid
+
+          Process.kill("HUP", pid)
+          sleep 1
+          reply[:status] = down?(request[:port])
+        end
+      end
+
+      action "emulator_status" do
+        if File.exist?("/tmp/choria-emulator/choria-emulator")
+          reply[:emulator] = md5("/tmp/choria-emulator/choria-emulator")
+        end
+
         if down?(request[:port])
           reply[:running] = false
           break
@@ -72,18 +98,98 @@ module MCollective
         reply[:memory] = status["memstats"]["Sys"]
       end
 
-      action "stop" do
-        reply[:status] = false
-
-        if up?(request[:port])
-          pid = emulator_pid(request[:port])
-
-          reply.fail!("Could not determine PID for running emulator") unless pid
-
-          Process.kill("HUP", pid)
-          sleep 1
-          reply[:status] = down?(request[:port])
+      action "start_nats" do
+        unless File.exist?("/tmp/choria-emulator/gnatsd")
+          reply.fail!("/tmp/choria-emulator/gnatsd does not exist")
         end
+
+        reply.fail!("NATS is already running") if nats_running?
+
+        FileUtils.chmod(0755, "/tmp/choria-emulator/gnatsd")
+
+        run('(/tmp/choria-emulator/gnatsd -T --log /tmp/choria-emulator/gnatsd.log --pid /tmp/choria-emulator/gnatsd.pid --port %s --http_port %s 2>&1 >> /tmp/choria-emulator/gnatsd.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+
+        sleep 1
+
+        reply[:running] = nats_running?
+      end
+
+      action "stop_nats" do
+        if nats_running?
+          kill_pid("gnatsd.pid")
+          sleep 1
+        end
+
+        reply[:stopped] = !nats_running?
+      end
+
+      action "start_federation" do
+        unless File.exist?("/tmp/choria-emulator/choria")
+          reply.fail!("/tmp/choria-emulator/choria does not exist")
+        end
+
+        reply.fail("Federation Broker is already running") if federation_running?
+
+        File.open("/tmp/choria-emulator/choria.cfg", "w") do |cfg|
+          cfg.puts("identity = %s" % config.identity)
+          cfg.puts("logfile = /tmp/choria-emulator/choria.log")
+          cfg.puts("loglevel = info")
+          cfg.puts("plugin.choria.broker_federation = true")
+          cfg.puts("plugin.choria.federation_middleware_hosts = %s" % request[:federation_servers])
+          cfg.puts("plugin.choria.middleware_hosts = %s" % request[:collective_servers])
+          cfg.puts("plugin.choria.broker_federation_cluster = %s" % (request[:name] || config.identity))
+        end
+
+        FileUtils.chmod(0755, "/tmp/choria-emulator/choria")
+
+        tls = request[:tls] ? "" : "--disable-tls"
+
+        Log.debug(request[:tls])
+        run('(/tmp/choria-emulator/choria broker run --pid /tmp/choria-emulator/choria.pid --config /tmp/choria-emulator/choria.cfg %s 2>&1 >> /tmp/choria-emulator/choria.log & ) &' % tls, :stdout => (out=[]), :stderr => (err=[]))
+        Log.debug(out.inspect)
+        Log.debug(err.inspect)
+
+        sleep 1
+
+        reply[:running] = federation_running?
+      end
+
+      action "stop_federation" do
+        if federation_running?
+          kill_pid("choria.pid")
+          sleep 1
+        end
+
+        reply[:stopped] = !federation_running?
+      end
+
+      def federation_running?
+        pid_running?("choria.pid")
+      end
+
+      def nats_running?
+        pid_running?("gnatsd.pid")
+      end
+
+      def kill_pid(pidfile)
+        file = File.join("/tmp/choria-emulator", pidfile)
+
+        raise("%s does not exist" % file) unless File.exist?(file)
+
+        Process.kill("HUP", Integer(File.read(file).chomp))
+      end
+
+      def pid_running?(pidfile)
+        file = File.join("/tmp/choria-emulator", pidfile)
+
+        return false unless File.exist?(file)
+
+        File.exist?("/proc/%d" % File.read(file).chomp)
+      end
+
+      def md5(file)
+        run("/bin/md5sum /tmp/choria-emulator/choria-emulator", :stdout => stdout = [], :sterr => [])
+        stdout.first.split(/\s/).first
       end
 
       def up?(port)
