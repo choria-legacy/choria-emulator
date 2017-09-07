@@ -23,7 +23,7 @@ type Agent interface {
 	HandleAgentMsg(msg string) (*[]byte, error)
 }
 
-func NewInstance(choria *mcollective.Choria, overrideServers []mcollective.Server) (i *ChoriaEmulationInstance, err error) {
+func NewInstance(choria *mcollective.Choria) (i *ChoriaEmulationInstance, err error) {
 	i = &ChoriaEmulationInstance{
 		name:   choria.Config.Identity,
 		choria: choria,
@@ -32,18 +32,12 @@ func NewInstance(choria *mcollective.Choria, overrideServers []mcollective.Serve
 	logger := log.WithFields(log.Fields{"emulator": i.name})
 
 	servers := func() ([]mcollective.Server, error) {
-		if len(overrideServers) > 0 {
-			return overrideServers, nil
-		}
-
 		return i.choria.MiddlewareServers()
 	}
 
-	if len(overrideServers) > 0 {
-		_, err = i.choria.MiddlewareServers()
-		if err != nil {
-			return nil, fmt.Errorf("Could not find initial NATS servers: %s", err.Error())
-		}
+	_, err = i.choria.MiddlewareServers()
+	if err != nil {
+		return nil, fmt.Errorf("Could not find initial NATS servers: %s", err.Error())
 	}
 
 	i.connector, err = choria.NewConnector(servers, i.name, logger)
@@ -114,9 +108,15 @@ func (self *ChoriaEmulationInstance) ProcessRequests(wg *sync.WaitGroup) {
 
 			if len(filter.AgentFilters()) > 0 {
 				for _, agent := range filter.AgentFilters() {
+					// mco find wants this but it will fail for actual requests
+					if agent == "rpcutil" {
+						continue
+					}
+
 					if _, ok := self.agents[agent]; !ok {
 						log.Warnf("Ignoring message due to agent filter: %s", agent)
 						process = false
+						break
 					}
 				}
 			}
@@ -125,6 +125,8 @@ func (self *ChoriaEmulationInstance) ProcessRequests(wg *sync.WaitGroup) {
 				continue
 			}
 		}
+
+		protocol.CopyFederationData(transport, request)
 
 		msg, err := mcollective.NewMessageFromRequest(request, transport.ReplyTo(), self.choria)
 		if err != nil {
@@ -179,13 +181,15 @@ func (self *ChoriaEmulationInstance) dispatch(msg *mcollective.Message, request 
 		return
 	}
 
-	json, err := transport.JSON()
+	protocol.CopyFederationData(request, transport)
+
+	j, err := transport.JSON()
 	if err != nil {
 		log.Warnf("Could not extract JSON data from transport: %s", err.Error())
 		return
 	}
 
-	err = self.connector.PublishRaw(msg.ReplyTo(), []byte(json))
+	err = self.connector.PublishRaw(msg.ReplyTo(), []byte(j))
 	if err != nil {
 		log.Warnf("Sending reply from %s failed: %s", msg.String(), err.Error())
 		return

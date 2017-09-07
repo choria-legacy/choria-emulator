@@ -1,5 +1,5 @@
-hash: 17183d1fa1ae4bf92296424519e65462a9bae583dbd476a71b4db779c7f39b2e
-updated: 2017-09-01T12:23:43.547070024-04:00
+hash: 8fca83601c168d47f629abea550315961dd48aa6e99dd7085c37297f013f9a23
+updated: 2017-09-07T18:50:36.8071152+02:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -8,19 +8,11 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/choria-io/go-choria
-  version: 269444ab0e0a9b6cb94786d3b40b11a47f45336f
+  version: 4ac63c440cb73b32417f66e3f94e45267d35ecfe
   subpackages:
   - mcollective
   - protocol
   - protocol/v1
-- name: github.com/gosuri/uilive
-  version: ac356e6e42cd31fcef8e6aec13ae9ed6fe87713e
-- name: github.com/gosuri/uiprogress
-  version: d0567a9d84a1c40dd7568115ea66f4887bf57b33
-  subpackages:
-  - util/strutil
-- name: github.com/mattn/go-isatty
-  version: fc9e8d8ef48496124e79ae0df75490096eccf6fe
 - name: github.com/nats-io/go-nats
   version: 29f9728a183bf3fa7e809e14edac00b33be72088
   subpackages:
@@ -33,10 +25,6 @@ imports:
   - util
 - name: github.com/nats-io/nuid
   version: 3cf34f9fca4e88afa9da8eabd75e3326c9941b44
-- name: github.com/ripienaar/rotrep
-  version: 1e9f778c4102cdd88acbcb42f68037615add2a29
-  subpackages:
-  - filesums
 - name: github.com/satori/go.uuid
   version: 879c5887cd475cd7864858769793b2ceb0d44feb
 - name: github.com/sirupsen/logrus

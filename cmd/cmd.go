@@ -34,7 +34,7 @@ func parseCLI() {
 	app := kingpin.New("choria-emulator", "Emulator for Choria Networks")
 	app.Author("R.I.Pienaar <rip@devco.net>")
 	app.Version("0.0.1")
-	app.Flag("name", "Instance name prefix").Required().StringVar(&name)
+	app.Flag("name", "Instance name prefix").Default("").StringVar(&name)
 	app.Flag("instances", "Number of instances to start").Short('i').Required().IntVar(&instanceCount)
 	app.Flag("agents", "Number of emulated agents to start").Short('a').Default("1").IntVar(&agentCount)
 	app.Flag("collectives", "Number of emulated subcollectives to create").Default("1").IntVar(&collectiveCount)
@@ -43,6 +43,13 @@ func parseCLI() {
 	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
 	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
 	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
+
+	if name == "" {
+		name, err = os.Hostname()
+		if err != nil {
+			panic(fmt.Sprintf("Name is not given and cannot determine hostname: %s", err.Error()))
+		}
+	}
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 }
@@ -81,15 +88,11 @@ func startInstances() {
 			ichoria.Config.OverrideCertname = ichoria.Config.Identity
 		}
 
-		var s []mcollective.Server
 		if len(servers) > 0 {
-			s, err = parseServers()
-			if err != nil {
-				panic(fmt.Sprintf("Could not parse servers supplied on the CLI: %s", err.Error()))
-			}
+			ichoria.Config.Choria.MiddlewareHosts = servers
 		}
 
-		emu, err := emulator.NewInstance(ichoria, s)
+		emu, err := emulator.NewInstance(ichoria)
 		if err != nil {
 			panic(fmt.Sprintf("Could not start emulator: %s", err.Error()))
 		}
