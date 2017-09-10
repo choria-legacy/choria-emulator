@@ -30,24 +30,13 @@ inputs:
     description: "Port to listen for monitor requests"
     type: "Integer"
     data: "emulator/nats_monitor"
+    save: true
 
   port:
     description: "Port to listen for client connections"
     type: "Integer"
     data: "emulator/nats_port"
-
-
-hooks:
-  pre_book:
-    - data:
-        action: "write"
-        key: "emulator/nats_monitor"
-        value: "{{{ inputs.monitor }}}"
-
-    - data:
-        action: "write"
-        key: "emulator/nats_port"
-        value: "{{{ inputs.port }}}"
+    save: true
 
 tasks:
   - mcollective:

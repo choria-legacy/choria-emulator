@@ -31,35 +31,21 @@ inputs:
     type: "String"
     validation: ":shellsafe"
     data: "emulator/emulator_url"
+    save: true
 
   gnatsd_url:
     description: "NATS URL (gnatsd)"
     type: "String"
     validation: ":shellsafe"
     data: "emulator/gnatsd_url"
+    save: true
 
   choria_url:
     description: "Choria URL (go-choria)"
     type: "String"
     validation: ":shellsafe"
     data: "emulator/choria_url"
-
-hooks:
-  pre_book:
-    - data:
-        action: "write"
-        key: "emulator/emulator_url"
-        value: "{{{ inputs.emulator_url }}}"
-
-    - data:
-        action: "write"
-        key: "emulator/gnatsd_url"
-        value: "{{{ inputs.gnatsd_url }}}"
-
-    - data:
-        action: "write"
-        key: "emulator/choria_url"
-        value: "{{{ inputs.choria_url }}}"
+    save: true
 
 tasks:
   - mcollective:

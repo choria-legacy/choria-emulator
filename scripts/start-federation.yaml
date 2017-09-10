@@ -31,24 +31,14 @@ inputs:
     type: "String"
     validation: ":shellsafe"
     data: "emulator/federation_collective_nats"
+    save: true
 
   collective:
     description: "Collective NATS Brokers"
     type: "String"
     validation: ":shellsafe"
     data: "emulator/federation_federation_nats"
-
-hooks:
-  pre_book:
-    - data:
-        action: "write"
-        key: "emulator/federation_federation_nats"
-        value: "{{{ inputs.collective }}}"
-
-    - data:
-        action: "write"
-        key: "emulator/federation_collective_nats"
-        value: "{{{ inputs.federation }}}"
+    save: true
 
 tasks:
   - mcollective:
