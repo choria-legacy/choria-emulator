@@ -1,0 +1,28 @@
+---
+name: stop_nats
+version: 0.0.1
+author: R.I.Pienaar <rip@devco.net>
+description: Stops NATS on every node
+run_as: choria=rip.mcollective
+loglevel: info
+
+uses:
+  emulator: ">= 0.0.1"
+
+nodes:
+  emulators:
+    type: mcollective
+    test: true
+    at_least: 1
+    agents:
+      - emulator
+    uses:
+      - emulator
+
+tasks:
+  - mcollective:
+      description: "Stop NATS"
+      nodes: "{{{ nodes.emulators }}}"
+      action: "emulator.stop_nats"
+      post:
+        - summarize

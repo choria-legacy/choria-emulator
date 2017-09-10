@@ -1,0 +1,96 @@
+---
+name: setup_prereqs
+version: 0.0.1
+author: R.I.Pienaar <rip@devco.net>
+description: Downloads the dependent binaries onto your target systems
+run_as: choria=rip.mcollective
+loglevel: info
+
+uses:
+  emulator: ">= 0.0.1"
+
+data_stores:
+  emulator:
+    type: "file"
+    file: "~/.choria-emulator.yaml"
+    format: "yaml"
+
+nodes:
+  emulators:
+    type: mcollective
+    test: true
+    at_least: 1
+    agents:
+      - emulator
+    uses:
+      - emulator
+
+inputs:
+  emulator_url:
+    description: "Emualtor URL (choria-emulator)"
+    type: "String"
+    validation: ":shellsafe"
+    data: "emulator/emulator_url"
+
+  gnatsd_url:
+    description: "NATS URL (gnatsd)"
+    type: "String"
+    validation: ":shellsafe"
+    data: "emulator/gnatsd_url"
+
+  choria_url:
+    description: "Choria URL (go-choria)"
+    type: "String"
+    validation: ":shellsafe"
+    data: "emulator/choria_url"
+
+hooks:
+  pre_book:
+    - data:
+        action: "write"
+        key: "emulator/emulator_url"
+        value: "{{{ inputs.emulator_url }}}"
+
+    - data:
+        action: "write"
+        key: "emulator/gnatsd_url"
+        value: "{{{ inputs.gnatsd_url }}}"
+
+    - data:
+        action: "write"
+        key: "emulator/choria_url"
+        value: "{{{ inputs.choria_url }}}"
+
+tasks:
+  - mcollective:
+      description: "Get Emulator"
+      nodes: "{{{ nodes.emulators }}}"
+      action: "emulator.download"
+      batch_size: 10
+      post:
+        - summarize
+      properties:
+        http: "{{{ inputs.emulator_url }}}"
+        target: "choria-emulator"
+
+  - mcollective:
+      description: "Get NATS"
+      nodes: "{{{ nodes.emulators }}}"
+      action: "emulator.download"
+      batch_size: 10
+      post:
+        - summarize
+      properties:
+        http: "{{{ inputs.gnatsd_url }}}"
+        target: "gnatsd"
+
+  - mcollective:
+      description: "Get Choria"
+      nodes: "{{{ nodes.emulators }}}"
+      action: "emulator.download"
+      batch_size: 10
+      post:
+        - summarize
+      properties:
+        http: "{{{ inputs.choria_url }}}"
+        target: "choria"
