@@ -10,7 +10,7 @@ Use this to determine the top scale a certain spec NATS broker will handle unclu
 
 ### NATS
 
-You need `gnatsd` running somewhere all the nodes can connect to, a simple TLS free `gnatsd` can be started with:
+You need `gnatsd` running on one of the NATS servers where all the nodes can connect to, a simple TLS free `gnatsd` can be started with:
 
 ```
 # ulimit -u unlimited
@@ -38,10 +38,12 @@ $ mco playbook run stop-emulator.yaml
 You'll need a special client cfg to connect to this network, save it in `emulator-client.cfg`:
 
 ```
-plugin.choria.middleware_hosts = 127.0.0.1:4222
-discovery_timeout = 5
-collectives = mcollective
+plugin.choria.middleware_hosts = 192.168.1.1:4222
 
+# for very large networks you'll need to do some tweaks here
+discovery_timeout = 5
+
+collectives = mcollective
 connection_timeout = 3
 connector = nats
 identity = emulator_client
@@ -53,3 +55,5 @@ securityprovider = choria
 plugin.choria.security.serializer = json
 plugin.choria.use_srv_records = false
 ```
+
+Run the scenario using `measure-collective.rb --config emulator-client.cfg` with additional options for amount of tests etc

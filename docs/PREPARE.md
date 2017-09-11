@@ -13,7 +13,6 @@ You'll need the following:
   * The emulator nodes must have the `mcollective_agent_emulator` module deployed on them
   * The shell node need the `mcollective_agent_emulator` but only it's client
 
-
 ![overview](overview.png)
 
 ## Prepare Emulators
@@ -22,18 +21,29 @@ The emulators will need copies of `gnatsd`, `choria-emulator` and `go-choria` de
 
 ```
 % touch ~/.choria-emulator.yaml
-% mco playbook run setup-prereqs.yaml 
+% mco playbook run setup-prereqs.yaml \
    --emulator_url=https://shell.internal/choria-emulator-0.0.1 \
    --gnatsd_url=https://shell.internal/gnatsd \
    --choria_url=https://shell.internal/go-choria
-
 ```
 
 The answers you supply here will be stored in `~/.choria-emulator.yaml` so next time you can leave off the arguments.
 
+## CLI tools for non TLS operation
+
+If the scenario is one run without TLS then you'll have to do some tweaks to your `mco` binary if you wanted to interact with the network using `mco ping` etc.
+
+```
+$ cp /opt/puppetlabs/puppet/bin/mco scripts/mco
+```
+
+Edit this and insert below the `#!` the following `$choria_unsafe_disable_nats_tls = true`. Use this `mco` with the config file the scenario gives you to interact with the network.
+
 ## Run the scenario
 
-Individual scenario documentation will show you how to deploy and configure the emulator and test client. Use teh basic flat scenario to confirm it all works using a 10 count test.
+Individual scenario documentation will show you how to deploy and configure the emulator and test client. Use the basic flat scenario to confirm it all works using a 10 count test.
+
+The individual scenarios will show example agents, collectives and instance counts, adjust it to your needs.  Generally I find a 4GB instance can manage 1 000 choria instances well enough.
 
 After the run is completed you can stop the various parts using these commands:
 
