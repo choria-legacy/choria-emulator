@@ -72,11 +72,11 @@ So if you intend to run many sub collectives or many agents you need to consider
 
 ## Scenarios
 
-Some setup is required to get this going, see the [Environment Setup](scenarios/PREPARE.md) guide and complete it before doing any of the scenarios.
+Some setup is required to get this going, see the [Environment Setup](docs/PREPARE.md) guide and complete it before doing any of the scenarios.
 
 A number of possible architectures can be built using this emulator, please see specific docs below:
 
-  * [Flat network](scenarios/SCENARIO-FLAT.md) with Choria instances and Client sharing a single NATS broker
+  * [Flat network](docs/SCENARIO-FLAT.md) with Choria instances and Client sharing a single NATS broker
   * Flat netowrk with Choria instances and Client sharing a cluster of 3 or 5 NATS brokers
   * Federated network with NATS + Federation on every node connecting to central Federation
 
