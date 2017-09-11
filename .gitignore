@@ -1,2 +1,5 @@
 choria-emulator
 vendor
+.vscode
+.DS_Store
+choria-emulator-0.0.1

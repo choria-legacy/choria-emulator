@@ -1,140 +1,83 @@
-# What?
+# Background
 
-This is a tool that creates multiple Choria instances in memory in a single process for the purpose of load testing a Choria infrastructure wrt middleware and Federation performance.
+When considering to build a large scale Choria network, one with more than 10 000 nodes, you have a number of things to consider when it comes to planning the optimal size of networks and network structure wrt Federation.
 
-Each instance can have a number of emulated agents, belong to many sub collectives and generally you'll be able to interact with them from the normal Choria `mco` CLI.  Each instance will make a NATS connection just like Choria does and make the same subscriptions.
+It is likely that a single flat network will not perform to your needs and this is highly dependant on your workloads.  You have to answer these questions:
 
-On my MBP I can run 2 000 instances of Choria along with a Choria Broker and the Choria client all on the same laptop and response times are around 1.5 seconds for all nodes.
+  * Total acceptable response time to an estate wide `mco rpc rpcutil ping` call
+  * Discovery time that, given optimal conditions, reliably discovers all your nodes
+  * Number of agents you will be running
+  * Number of sub collectives you will be running
+  * Max acceptible downtime you can experience when rebooting the middleware layer
+  
+You have to supply the targets for these that fit your workloads and style.
+
+With these targets, how do you figure out what are the right size networks? This repository provided tools to help you answer and validate these items.
+
+The end result is a method to repeatedly and reliably study the performance of Choria under various configurations and topologies.  Armed with this you can determine optimal sizes for your Federated Networks etc. You'll be able to determine if your topology supports each of the target numbers you set above.
+
+This is primarily a research tool the Choria developers use to validate Choria and the various architectures we support.  If we want to see how might 200 Federated Networks behave, it's easy to standup a network with exactly that given a some EC2 instances.
+
+Expect the eventual outcome to be statements about the scalability of Choria given specific test environments.  But we'd like this to be usable and open so others can validate our methods and reproduce for their own networks.
+
+# Choria Emualtor
+As it's unrealistic that you'll have a 100 000 nodes just lying around your lab an emulator is included that creates multiple Choria instances in memory in a single process.
+
+Each instance can have a number of emulated agents, belong to many sub collectives and generally you'll be able to interact with them from the normal Choria `mco` CLI in representitive ways and it will generate traffic matching a real Choria.
+
+On my MBP I can run 2 000 instances of Choria along with a Choria Broker and the Choria client all on the same laptop and response times are around 1.5 seconds for all nodes. Of course what is realistic per VM varies on spec but I have had good success with 750-1000 emulated instances on a 2GB VM.
 
 The idea is that you will use many VMs, say a few 100, deploy standard Choria to them along with an agent, that will be provided here, to manage a big network of emulated Choria instances.
 
 Each of these 100s of VMs can run, lets say, a thousand Choria instances at a time and you can point them at different topologies of NATS, Federation etc and do tests with different concurrencies and payload sizes.
 
-```
-usage: choria-emulator --name=NAME --instances=INSTANCES [<flags>]
+Using this is should be feasable to make realistic emulations of Choria networks with 100 000 to 300 000 nodes.
 
-Emulator for Choria Networks
+## Instrumentation Tool
 
-Flags:
-      --help                 Show context-sensitive help (also try --help-long and --help-man).
-      --version              Show application version.
-      --name=NAME            Instance name prefix
-  -i, --instances=INSTANCES  Number of instances to start
-  -a, --agents=1             Number of emulated agents to start
-      --collectives=1        Number of emulated subcollectives to create
-  -c, --config=CONFIG        Choria configuration file
-      --tls                  Enable TLS on the NATS connections
-      --verify               Enable TLS certificate verifications on the NATS connections
-      --server=SERVER ...    NATS Server pool, specify multiple times (eg one:4222)
-  -p, --http-port=8080       Port to listen for /debug/vars
-```
+A tool is included to make 100s or 1000s of requests against the emulated network, during this it records vast
+amounts of statistics and write these out to CSV files for offline analysis.
 
-## Agents
-When you specify the creation of 10 agents you will get a series of agents called `emulated0`, `emulated1` and so forth. The main motivation for this is to discover the limits of NATS since each agent involves multiple queues.
+Using this you can verify if your topology meets the requirements set out above thus helping you determine what is the optimal sizes for Choria Networks.
 
-These agents are all identical and have just one action `generate` that takes a `size` argument. It will create a reply message with a string reply equal in size to what was requested.
+Scripts or a Google Sheet will be provided to analyze this data.
 
-This is good test the impact of varying sizes of payload on your infrastructure.
+## Understanding how Choria use NATS.
 
-Additionally it has the standard `discovery` agent so `mco ping` and so forth works.  Filters wise it only support the `agent` filter which is sufficient for this kind of testing.
+Generally the cost and performance of a network broker comes down to:
 
-```
-$ mco rpc emulated0 generate size=10 -I test-1 -j
-[
-  {
-    "agent": "emulated0",
-    "action": "generate",
-    "sender": "test-1",
-    "statuscode": 0,
-    "statusmsg": "OK",
-    "data": {
-      "message": "0123456789"
-    }
-  }
-]
-```
+  * Number of TCP Connections
+  * TLS or Plain
+  * Number of message targets and their types
+  * Number of subscribers
+  * Cluster overhead
 
-## Subcollectives
-Subcollectives are supported, by default it belongs to the typical `mcollective` sub collective.
+1 single Choria node will:
 
-If you ask if to belong to 3 using the `--collectives` option it will subscribe to collectives `mcollective`, `collective1` and `collective2`.
+  * Maintain a single TCP session to the NATS broker
+  * Use TLS unconditionally
+  * Subscribe to one queue unique to itself in every subcollective
+  * For every agent like `puppet` a broadcast topic exist in every sub collective
+  * Subscribe to `subcollectives * agents` broadcast queues. The least amount of agents is 2
+  
+So 10 agents in 5 sub collectives will use:
 
-The motivation for allowing multiples collectives is that each collective multiplies the amount of middleware subscriptions.
+   * 50 broadcast target for agents
+   * 5 targets for the node for directed traffic
+   * 1 TCP Connection
 
-With 10 agents in one collective it would make 11 subscriptions, in 2 collectives it would make 22 and so forth.
+100 nodes will have 5 500 subscription, 550 NATS targets and 100 NATS TCP connections.
 
-# Managing
-A mcollective agent is included that you can use to construct a testing network.
+So if you intend to run many sub collectives or many agents you need to consider that in your testing as it will impact the performance, bootstrap time and memory consumption of the NATS broker.
 
-The idea is that you have lets say 100 nodes that communicate with usual Choria, nothing special, dedicated NATS for them etc.
+## Scenarios
 
-You then use MCollective to run the emulator on those 100 nodes, the emulator should be set to connect to a dedicated NATS instance, Cluster or Federation.  The agent will let you build out various scale of emulated Choria deployments.
+Some setup is required to get this going, see the [Environment Setup](scenarios/PREPARE.md) guide and complete it before doing any of the scenarios.
 
-The agent has the typical start, stop, status actions but also a download one to distribute the emulator - useful while changing it's code for instance.
+A number of possible architectures can be built using this emulator, please see specific docs below:
 
-Expect a blog post that covers how to use this once it's completed
+  * [Flat network](scenarios/SCENARIO-FLAT.md) with Choria instances and Client sharing a single NATS broker
+  * Flat netowrk with Choria instances and Client sharing a cluster of 3 or 5 NATS brokers
+  * Federated network with NATS + Federation on every node connecting to central Federation
 
-The start action looks like this, use `mco plugin doc agent/emulator` to see the rest:
-
-```
-   start action:
-   -------------
-       Start an emulator instance
-
-       INPUT:
-           agents:
-              Description: Number of emulated* agents the emulator will host
-                   Prompt: Agents
-                     Type: integer
-                 Optional: false
-            Default Value: 1
-
-           collectives:
-              Description: Number of subcollective the emulator will join
-                   Prompt: Subcollectives
-                     Type: integer
-                 Optional: false
-            Default Value: 1
-
-           instances:
-              Description: Number of simulated choria instances the emulator will host
-                   Prompt: Instances
-                     Type: integer
-                 Optional: false
-            Default Value: 1
-
-           monitor:
-              Description: Port to listen for monitoring requests
-                   Prompt: Monitor Port
-                     Type: integer
-                 Optional: false
-            Default Value: 8080
-
-           name:
-              Description: Instance Name
-                   Prompt: Name
-                     Type: string
-                 Optional: true
-               Validation: ^\w+$
-                   Length: 16
-
-           servers:
-              Description: Comma separated list of host:port pairs
-                   Prompt: Servers to connect to
-                     Type: string
-                 Optional: true
-               Validation: .
-                   Length: 256
-
-           tls:
-              Description: Run with TLS enabled
-                   Prompt: TLS
-                     Type: boolean
-                 Optional: false
-
-
-       OUTPUT:
-           status:
-              Description: true if the emulator started
-               Display As: Started
-```
+For each scenario you can adjust the amount of agents and sub collectives to your needs.

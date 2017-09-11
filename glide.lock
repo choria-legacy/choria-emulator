@@ -1,5 +1,5 @@
 hash: 8fca83601c168d47f629abea550315961dd48aa6e99dd7085c37297f013f9a23
-updated: 2017-09-07T18:50:36.8071152+02:00
+updated: 2017-09-08T08:30:11.105959759+02:00
 imports:
 - name: github.com/alecthomas/template
   version: a0175ee3bccc567396460bf5acd36800cb10c49c
@@ -8,7 +8,7 @@ imports:
 - name: github.com/alecthomas/units
   version: 2efee857e7cfd4f3d0138cc3cbb1b4966962b93a
 - name: github.com/choria-io/go-choria
-  version: 4ac63c440cb73b32417f66e3f94e45267d35ecfe
+  version: 4a9e56f362c13146218a2d7f4b4fd2e7a73bd9da
   subpackages:
   - mcollective
   - protocol

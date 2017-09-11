@@ -73,9 +73,14 @@ def parse_cli
     parser.on("--out DIR", "-o", "Directory to store results in") do |v|
       @config[:out] = v
     end
+
+    parser.on("--description DESCRIPTION", String, "Test scenario description") do |v|
+      @config[:description] = v
+    end
   end
 
   abort("Please specify an output dir with --out") unless @config[:out]
+  abort("Please specify a test description with --description") unless @config[:description]
 
   @config[:stats_dir] = File.join(@config[:out], Time.now.strftime("%Y%m%d-%H%M%S"))
 
@@ -186,6 +191,10 @@ def report
   puts "OK: %d FAILED: %d MIN: %.4f MAX: %.4f AVG: %.4f STDDEV: %.4f" % [ok, failed, min, max, times.mean, times.standard_deviation]
 
   calculate_time_buckets(max)
+
+  File.open(File.join(@config[:stats_dir], "desciption.json"), "w") do |f|
+    f.puts(@config.to_json)
+  end
 end
 
 options = parse_cli
