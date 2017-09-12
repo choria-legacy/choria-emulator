@@ -13,7 +13,7 @@ variable "nats_count" {
 
 variable "emulator_count" {
   description = "Amount of Emulator Instances"
-  default = 2
+  default = 1
 }
 
 variable "region" {

@@ -11,6 +11,7 @@ users:
 runcmd:
   - "rpm -ivh http://yum.puppetlabs.com/puppet5/puppet-release-el-7.noarch.rpm"
   - "yum -y install puppet-agent"
+  - "ln -s /opt/puppetlabs/bin/puppet /opt/puppetlabs/bin/facter /opt/puppetlabs/bin/mco /usr/bin/"
   - "/opt/puppetlabs/bin/puppet resource host puppet ensure=present ip=${puppet_master_ip}"
   - "echo role=${role} > /opt/puppetlabs/facter/facts.d/role.txt"
   - "/opt/puppetlabs/bin/puppet config set --section main waitforcert 10"
