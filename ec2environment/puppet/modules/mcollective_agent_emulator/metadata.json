@@ -1,0 +1,23 @@
+{
+  "name": "choria-mcollective_agent_emulator",
+  "version": "0.0.1",
+  "author": "R.I.Pienaar <rip@devco.net>",
+  "summary": "Choria Agent emulated by choria-emulator",
+  "license": "Apache-2.0",
+  "source": "http://choria.io",
+  "project_page": "http://choria.io",
+  "issues_url": null,
+  "dependencies": [
+    {
+      "name": "choria/mcollective",
+      "version_requirement": ">= 0.0.24 < 2.0.0"
+    }
+  ],
+  "data_provider": null,
+  "requirements": [
+    {
+      "name": "puppet",
+      "version_requirement": ">= 4.9.0"
+    }
+  ]
+}

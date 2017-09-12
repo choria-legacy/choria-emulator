@@ -1,0 +1,12 @@
+---
+mcollective_agent_emulator::config_name: emulator
+mcollective_agent_emulator::common_files:
+- agent/emulated0.ddl
+- agent/emulator.ddl
+mcollective_agent_emulator::common_directories: []
+mcollective_agent_emulator::server_files:
+- agent/emulator.rb
+mcollective_agent_emulator::server_directories: []
+mcollective_agent_emulator::client_files: []
+mcollective_agent_emulator::client_directories: []
+
