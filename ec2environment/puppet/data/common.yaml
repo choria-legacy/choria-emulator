@@ -1,0 +1,9 @@
+mcollective::site_policies:
+  - action: "allow"
+    callers: "choria=emulator.mcollective"
+    actions: "*"
+    facts: "*"
+    classes: "*"
+
+classes:
+  - roles::%{facts.role}
