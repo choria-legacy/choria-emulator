@@ -1,4 +1,8 @@
 class roles::shell {
   include profiles::common
-  include profiles::emulator
+
+  class{"profiles::emulator":
+    client => true,
+    server => false
+  }
 }
