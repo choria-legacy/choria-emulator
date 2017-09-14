@@ -188,7 +188,7 @@ module MCollective
       end
 
       def md5(file)
-        run("/bin/md5sum /tmp/choria-emulator/choria-emulator", :stdout => stdout = [], :sterr => [])
+        run("/bin/md5sum %s" % file, :stdout => stdout = [], :sterr => [])
         stdout.first.split(/\s/).first
       end
 

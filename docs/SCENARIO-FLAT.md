@@ -13,9 +13,11 @@ Use this to determine the top scale a certain spec NATS broker will handle unclu
 You need `gnatsd` running on one of the NATS servers where all the nodes can connect to, a simple TLS free `gnatsd` can be started with:
 
 ```
-# ulimit -u unlimited
+# ulimit -n 200000
 # gnatsd -T -m 8222 -p 4222
 ```
+
+NOTE the `ulimit` above should be set to enough, NATS in it's current version will not log about out of file handles except in debug, so set to very high.
 
 Lets say for example this is running on `192.168.1.1:4222`
 
