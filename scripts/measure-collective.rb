@@ -195,6 +195,9 @@ def report
   File.open(File.join(@config[:stats_dir], "desciption.json"), "w") do |f|
     f.puts(@config.to_json)
   end
+
+  puts
+  puts "Reports saved in %s" @config[:stats_dir]
 end
 
 options = parse_cli

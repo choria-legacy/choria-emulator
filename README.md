@@ -9,7 +9,7 @@ It is likely that a single flat network will not perform to your needs and this 
   * Number of agents you will be running
   * Number of sub collectives you will be running
   * Max acceptible downtime you can experience when rebooting the middleware layer
-  
+
 You have to supply the targets for these that fit your workloads and style.
 
 With these targets, how do you figure out what are the right size networks? This repository provided tools to help you answer and validate these items.
@@ -59,7 +59,7 @@ Generally the cost and performance of a network broker comes down to:
   * Subscribe to one queue unique to itself in every subcollective
   * For every agent like `puppet` a broadcast topic exist in every sub collective
   * Subscribe to `subcollectives * agents` broadcast queues. The least amount of agents is 2
-  
+
 So 10 agents in 5 sub collectives will use:
 
    * 50 broadcast target for agents
@@ -79,5 +79,7 @@ A number of possible architectures can be built using this emulator, please see 
   * [Flat network](docs/SCENARIO-FLAT.md) with Choria instances and Client sharing a single NATS broker
   * Flat netowrk with Choria instances and Client sharing a cluster of 3 or 5 NATS brokers
   * Federated network with NATS + Federation on every node connecting to central Federation
+
+For each scenario you can monitor your NATS infrastructure for [connection and subscription rates](docs/NATS.md).
 
 For each scenario you can adjust the amount of agents and sub collectives to your needs.
