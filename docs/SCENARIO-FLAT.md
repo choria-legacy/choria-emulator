@@ -59,3 +59,4 @@ plugin.choria.use_srv_records = false
 ```
 
 Run the scenario using `measure-collective.rb --config emulator-client.cfg` with additional options for amount of tests etc
+
