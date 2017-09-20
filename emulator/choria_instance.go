@@ -40,7 +40,7 @@ func NewInstance(choria *mcollective.Choria) (i *ChoriaEmulationInstance, err er
 		return nil, fmt.Errorf("Could not find initial NATS servers: %s", err.Error())
 	}
 
-	i.connector, err = choria.NewConnector(servers, i.name, logger)
+	i.connector, err = choria.NewConnector(servers, choria.Certname(), logger)
 	if err != nil {
 		return nil, fmt.Errorf("Could not create connector for instance %s: %s", i.name, err.Error())
 	}

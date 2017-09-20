@@ -66,13 +66,20 @@ func Run() {
 }
 
 func startInstances() {
+	ssldir, err := choria.SSLDir()
+	if err != nil {
+		panic(err.Error())
+	}
+
 	for instance := 0; instance <= instanceCount-1; instance++ {
 		ichoria, err := mcollective.New(choria.Config.ConfigFile)
 		if err != nil {
 			panic(fmt.Sprintf("Could not initialize Choria for instance %d: %s", instance, err.Error()))
 		}
 
+		ichoria.Config.Choria.SSLDir = ssldir
 		ichoria.Config.Identity = fmt.Sprintf("%s-%d", name, instance)
+		ichoria.Config.OverrideCertname = ichoria.Config.Identity
 		ichoria.Config.Collectives = []string{"mcollective"}
 
 		for i := 1; i < collectiveCount; i++ {
@@ -84,8 +91,13 @@ func startInstances() {
 			ichoria.Config.DisableTLS = true
 		}
 
-		if !(enableTLS && !enableTLSVerify) {
-			ichoria.Config.OverrideCertname = ichoria.Config.Identity
+		if !enableTLSVerify {
+			ichoria.Config.DisableTLSVerify = true
+		}
+
+		// use the node certs for all connections when TLS is on but not being verified
+		if enableTLS && !enableTLSVerify {
+			ichoria.Config.OverrideCertname = name
 		}
 
 		if len(servers) > 0 {
