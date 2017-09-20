@@ -1,9 +1,13 @@
 mcollective::site_policies:
   - action: "allow"
-    callers: "choria=emulator.mcollective"
+    callers: "choria=choria.mcollective"
     actions: "*"
     facts: "*"
     classes: "*"
 
 classes:
   - roles::%{facts.role}
+
+limits::entries:
+  "root/nofile":
+    both: 1048576

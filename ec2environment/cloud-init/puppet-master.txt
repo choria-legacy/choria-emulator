@@ -1,7 +1,7 @@
 #cloud-config
 
 users:
-  - name: emulator
+  - name: choria
     gecos: Choria Emulator
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh-authorized-keys:

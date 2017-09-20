@@ -1,7 +1,7 @@
 #cloud-config
 
 users:
-  - name: emulator
+  - name: choria
     gecos: Choria Emulator
     sudo: ALL=(ALL) NOPASSWD:ALL
     ssh-authorized-keys:
@@ -10,7 +10,7 @@ users:
 
 runcmd:
   - "rpm -ivh http://yum.puppetlabs.com/puppet5/puppet-release-el-7.noarch.rpm"
-  - "yum -y install puppet-agent"
+  - "yum -y install puppet-agent git"
   - "ln -s /opt/puppetlabs/bin/puppet /opt/puppetlabs/bin/facter /opt/puppetlabs/bin/mco /usr/bin/"
   - "/opt/puppetlabs/bin/puppet resource host puppet ensure=present ip=${puppet_master_ip}"
   - "echo role=${role} > /opt/puppetlabs/facter/facts.d/role.txt"
