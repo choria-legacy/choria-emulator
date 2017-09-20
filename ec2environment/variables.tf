@@ -8,12 +8,12 @@ variable "secret_key" {
 
 variable "nats_count" {
   description = "Amount of NATS instances"
-  default = 1
+  default = 3
 }
 
 variable "emulator_count" {
   description = "Amount of Emulator Instances"
-  default = 1
+  default = 17
 }
 
 variable "region" {

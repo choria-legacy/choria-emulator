@@ -31,12 +31,14 @@ inputs:
     type: "Integer"
     data: "emulator/emulator_agents"
     save: true
+    default: 10
 
   collectives:
     description: "Number of collectives to join"
     type: "Integer"
     data: "emulator/emulator_collectives"
     save: true
+    default: 1
 
   instances:
     description: "Number of instances to start"
@@ -49,6 +51,7 @@ inputs:
     type: "Integer"
     data: "emulator/emulator_monitor"
     save: true
+    default: 8080
 
   servers:
     description: "NATS Servers to connect to"

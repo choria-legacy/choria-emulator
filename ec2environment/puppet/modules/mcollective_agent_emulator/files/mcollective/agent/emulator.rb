@@ -42,6 +42,9 @@ module MCollective
         args << "--instances %d" % request[:instances]
         args << "--http-port %d" % request[:monitor]
         args << "--config /dev/null"
+        args << "--agents %d" % request[:agents] if request[:agents]
+        args << "--collectives %d" % request[:collectives] if request[:collectives]
+        args << "--tls" if request[:tls]
 
         if request[:name]
           args << "--name %s" % request[:name]
@@ -49,10 +52,11 @@ module MCollective
           args << "--name %s" % config.identity
         end
 
-        args << "--agents %d" % request[:agents] if request[:agents]
-        args << "--collectives %d" % request[:collectives] if request[:collectives]
-        args << "--server %s" % request[:servers].gsub(" ", "") if request[:servers]
-        args << "--tls" if request[:tls]
+        if request[:servers]
+          request[:servers].split(",").each do |server|
+            args << "--server %s" % server.gsub(" ", "")
+          end
+        end
 
         out = []
         err = []
@@ -177,6 +181,13 @@ module MCollective
         raise("%s does not exist" % file) unless File.exist?(file)
 
         Process.kill("HUP", Integer(File.read(file).chomp))
+
+        sleep 0.2
+
+        if pid_running?(pidfile)
+          sleep 1
+          Process.kill("KILL", Integer(File.read(file).chomp))
+        end
       end
 
       def pid_running?(pidfile)

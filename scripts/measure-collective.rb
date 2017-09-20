@@ -197,7 +197,7 @@ def report
   end
 
   puts
-  puts "Reports saved in %s" @config[:stats_dir]
+  puts "Reports saved in %s" % @config[:stats_dir]
 end
 
 options = parse_cli
