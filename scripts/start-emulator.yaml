@@ -14,6 +14,7 @@ data_stores:
     type: "file"
     file: "~/.choria-emulator.yaml"
     format: "yaml"
+    create: true
 
 nodes:
   emulators:
