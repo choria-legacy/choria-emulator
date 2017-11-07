@@ -35,3 +35,16 @@ You can also monitor the incoming connection rate using:
 ```
 ./nats-monitor.rb --out /dev/stdout --source varz --variable connections
 ```
+
+# Memory
+
+There's no hard rules about memory use per connection, presumably it will even change between releases and Go versions.
+
+I found that 50 000 nodes use about 1.6GB RAM and 309 000 nodes use about 7.5GB, best you check on your own:
+
+```
+$ curl -s http://localhost:8222/varz > varz.1.json
+$ curl -s http://localhost:8222/subsz > subs.1.json
+```
+
+This will include a bunch of information about connections, memory, subscriptions etc, this won't change that much during a run apart from the stuff above, so just grab this statically once the network settles.

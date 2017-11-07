@@ -15,6 +15,8 @@ You'll need the following:
 
 ![overview](overview.png)
 
+I found with EC2 t2.medium machines I can do 1 000 Choria instances per node easily, you might even go higher.  So that should guide you in the amount of emulators.  I've succesfully run 309 000 nodes on a single NATS, so just stick with 1 or 3 :)
+
 ## Prepare Emulators
 
 The emulators will need copies of `gnatsd`, `choria-emulator` and `go-choria` deployed on them, you can do this as follows:

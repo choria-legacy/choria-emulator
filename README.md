@@ -70,6 +70,14 @@ So 10 agents in 5 sub collectives will use:
 
 So if you intend to run many sub collectives or many agents you need to consider that in your testing as it will impact the performance, bootstrap time and memory consumption of the NATS broker.
 
+## A note about TLS
+
+The tests here are done without TLS.  I found that establishing TLS connections to NATS is particularly slow - 0.01 to 0.2 seconds per connection and high CPU usage.  We tracked this down to Go internals and just the fact that encryption is heavy.
+
+By all means run TLS tests, I found once they are connected and settled (quite some time on 50 000 nodes!) that performance compared very favourably with non TLS networks.  You'll see a 3 second increase in full 50 000 node round trip with TLS and stability is not impacted.
+
+For me, to keep things sane, I am not doing tests below with TLS.  The tooling supports TLS tests though.
+
 ## Scenarios
 
 Some setup is required to get this going, see the [Environment Setup](docs/PREPARE.md) guide and complete it before doing any of the scenarios.

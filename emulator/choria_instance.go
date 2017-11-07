@@ -2,7 +2,10 @@ package emulator
 
 import (
 	"fmt"
+	"math/rand"
+	"strconv"
 	"sync"
+	"time"
 
 	"github.com/choria-io/go-choria/protocol"
 
@@ -21,6 +24,10 @@ type Agent interface {
 	Init() error
 	Name() string
 	HandleAgentMsg(msg string) (*[]byte, error)
+}
+
+type Registrator interface {
+	RegistrationData() (*[]byte, error)
 }
 
 func NewInstance(choria *mcollective.Choria) (i *ChoriaEmulationInstance, err error) {
@@ -74,6 +81,8 @@ func (self *ChoriaEmulationInstance) Init(agentCount int) error {
 
 	self.subscribeNode()
 	self.subscribeAgents()
+
+	go self.startRegistration()
 
 	return nil
 }
@@ -138,11 +147,80 @@ func (self *ChoriaEmulationInstance) ProcessRequests(wg *sync.WaitGroup) {
 	}
 }
 
+func (self *ChoriaEmulationInstance) startRegistration() {
+	if self.choria.Config.Registration == "" {
+		return
+	}
+
+	size, _ := strconv.Atoi(self.choria.Config.Registration)
+	registrator := &EmulatorRegistration{
+		Size: size,
+	}
+
+	log.Infof("Starting registration with size %d and interval %d", size, self.choria.Config.RegisterInterval)
+
+	if self.choria.Config.RegistrationSplay {
+		sleepTime := time.Duration(rand.Intn(60))
+		time.Sleep(sleepTime * time.Second)
+	}
+
+	cnt := 0
+
+	for {
+		if cnt > 0 {
+			time.Sleep(time.Duration(self.choria.Config.RegisterInterval) * time.Second)
+		}
+
+		data, err := registrator.RegistrationData()
+		if err != nil {
+			log.Errorf("Could not extract registration data: %s", err.Error())
+			continue
+		}
+
+		// TODO: this dance need a mcollective.protocol helper
+		msg, err := mcollective.NewMessage(string(*data), "discovery", self.choria.Config.RegistrationCollective, "request", nil, self.choria)
+		if err != nil {
+			log.Warnf("Could not create Message: %s", err.Error())
+			continue
+		}
+
+		request, err := self.choria.NewRequestFromMessage(protocol.RequestV1, msg)
+		if err != nil {
+			log.Warnf("Could not create Request: %s", err.Error())
+			continue
+		}
+
+		srequest, err := self.choria.NewSecureRequest(request)
+		if err != nil {
+			log.Warnf("Could not create Secure Request: %s", err.Error())
+			continue
+		}
+
+		transport, err := self.choria.NewTransportForSecureRequest(srequest)
+		if err != nil {
+			log.Warnf("Could not create Request Transport: %s", err.Error())
+			continue
+		}
+
+		j, err := transport.JSON()
+		if err != nil {
+			log.Warnf("Could not extract JSON data from transport: %s", err.Error())
+			continue
+		}
+
+		target := fmt.Sprintf("%s.broadcast.agent.%s", self.choria.Config.RegistrationCollective, "registration")
+		err = self.connector.PublishRaw(target, []byte(j))
+		if err != nil {
+			log.Warnf("Sending discovery request failed: %s", err.Error())
+			continue
+		}
+	}
+}
+
 func (self *ChoriaEmulationInstance) subscribeNode() {
 	for _, collective := range self.choria.Config.Collectives {
 		target := fmt.Sprintf("%s.node.%s", collective, self.name)
 		self.connector.Subscribe("node", target, "")
-		// log.Debugf("Subscribed to %s", target)
 	}
 }
 

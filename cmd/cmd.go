@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"sync"
 
 	log "github.com/sirupsen/logrus"
@@ -24,6 +25,9 @@ var (
 	enableTLS       bool
 	enableTLSVerify bool
 	servers         []string
+	registration    bool
+	regInterval     int
+	regSize         int
 	err             error
 	wg              sync.WaitGroup
 	choria          *mcollective.Choria
@@ -43,6 +47,9 @@ func parseCLI() {
 	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
 	app.Flag("server", "NATS Server pool, specify multiple times (eg one:4222)").StringsVar(&servers)
 	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
+	app.Flag("registration", "Enable sending registration data").Default("false").BoolVar(&registration)
+	app.Flag("registration-interval", "Interval to send registration data in (seconds)").Short('I').Default("600").IntVar(&regInterval)
+	app.Flag("registration-sized", "Size of the payload to send using registration (bytes)").Short('S').Default("1024").IntVar(&regSize)
 
 	if name == "" {
 		name, err = os.Hostname()
@@ -81,6 +88,13 @@ func startInstances() {
 		ichoria.Config.Identity = fmt.Sprintf("%s-%d", name, instance)
 		ichoria.Config.OverrideCertname = ichoria.Config.Identity
 		ichoria.Config.Collectives = []string{"mcollective"}
+
+		if registration {
+			ichoria.Config.Registration = strconv.Itoa(regSize)
+			ichoria.Config.RegisterInterval = regInterval
+			ichoria.Config.RegistrationSplay = true
+			ichoria.Config.RegistrationCollective = "mcollective"
+		}
 
 		for i := 1; i < collectiveCount; i++ {
 			collective := fmt.Sprintf("collective%d", i)
