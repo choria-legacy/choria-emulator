@@ -6,14 +6,19 @@ variable "secret_key" {
   description = "AWS secret access key"
 }
 
+variable "shell_count" {
+  description = "Amount of shell instances"
+  default = 1
+}
+
 variable "nats_count" {
   description = "Amount of NATS instances"
-  default = 3
+  default = 1
 }
 
 variable "emulator_count" {
   description = "Amount of Emulator Instances"
-  default = 17
+  default = 16
 }
 
 variable "region" {

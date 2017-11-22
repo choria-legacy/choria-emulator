@@ -7,7 +7,7 @@ resource "template_file" "shell_init" {
 }
 
 resource "aws_instance" "shell" {
-  count = 1
+  count = "${var.shell_count}"
   ami = "${lookup(var.amis, var.region)}"
   instance_type = "t2.medium"
   subnet_id = "${aws_subnet.choria_emulator.id}"
@@ -25,6 +25,6 @@ resource "aws_instance" "shell" {
 }
 
 output "shell" {
-  value = "${aws_instance.shell.public_dns}"
+  value = "${aws_instance.shell.*.public_dns}"
 }
 
