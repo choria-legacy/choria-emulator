@@ -9,7 +9,8 @@ include MCollective::RPC
   :count => 10,
   :size => 10,
   :out => "reports",
-  :stats_dir => nil
+  :stats_dir => nil,
+  :direct => false
 }
 
 @stats = {}
@@ -56,6 +57,10 @@ def parse_cli
   options = oparser.parse do |parser, opts|
     parser.on("--disable-tls", "Disables TLS on the NATS connection") do
       $choria_unsafe_disable_nats_tls = true
+    end
+
+    parser.on("--force-direct", "Force direct mode communications") do
+      options[:direct] = true
     end
 
     parser.on("--discovery-timeout SECONDS", "--dt", Integer, "Discovery Timeout") do |v|
@@ -109,6 +114,11 @@ def run_test(options)
   found = client.discover.size
 
   abort("Did not discover any nodes") unless found > 0
+
+  if @config[:direct]
+    puts "Forcing direct mode communication"
+    client.discover(:nodes => client.discover.clone)
+  end
 
   puts "Performing %d tests against %d nodes with a payload of %d bytes stats in %s" % [@config[:count], found, @config[:size], @config[:stats_dir]]
 
