@@ -9,6 +9,6 @@ resource "aws_security_group" "management" {
   }
 
   tags {
-    Project = "choria_emulator"
+    Project = "choria_test"
   }
 }
