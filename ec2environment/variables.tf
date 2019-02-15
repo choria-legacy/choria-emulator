@@ -45,6 +45,6 @@ variable "emulator_subnet_cidr" {
 variable "amis" {
   description = "Base AMI to launch the instances with"
   default = {
-    eu-central-1 = "ami-fa2df395"
+    eu-central-1 = "ami-337be65c"
   }
 }

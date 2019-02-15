@@ -9,7 +9,7 @@ users:
       - "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAACAQC3XZsf4OmqktsCtmGTX91ORpCt34pFS9dGcrvLGhgIacr1pCCz9F/QDghNRdH+LmcpXrzXF5E7yQ0JFn0ICLwpW2ftcY3y+c6qV+NIYpuyQv5IhDrY5HU7n9+Lypive4wtrv2JatXWyI1GheQws8wgM9mcSNL3awEYSfE0LqIK1/Wyh+dQxHUdNOcBBTs/R3Jllrzkb5b0pDHncQLOJy73d68QF5aiWKS7WVpPkxAOCAwXqqfR6egA8HB5CT2tGZlgBIJkxx3pFUEXtCkNQrl7HSmGAc1zeHpUKAfv1z0t5HtL8r/RH7L1uHaSVhrMGfMcFCXQo0ez7l5/otv/TiDGtaSmZL0vaJPeRvzRmMKOf6LMUBGs/IHCe2vErZ/XkBlNCSa2zTvJ+FstBG8i66BrfDGdCv84bYP9AKHULpww+MfWT70xVX+UUkBU8NbjY/t7Nv5mKPsLpfnIhOyty1yKEnTEkfmuJIGBa4chFXIHcNR9wvuuboL1CB95wyKxf/Jw8SGk+Wk5WMFz8/8qpxGriR10BE0+m0SgN+ubhM+wdVl+puap20EOhRlBgiM/LrIdMwsHTtPWtGhKBZK9jLpgg7nhrFmjrpoK155ggArIOd5lYDVIMtRs0a147hxGpS8N3F/Trq4feJ02V+JqBpfVuS9EuM8xkfs1B+22AFC65w== rip@liberate"
 
 runcmd:
-  - "rpm -ivh http://yum.puppetlabs.com/puppet5/puppet-release-el-7.noarch.rpm"
+  - "rpm -ivh http://yum.puppetlabs.com/puppet6/puppet-release-el-7.noarch.rpm"
   - "yum -y install puppet-agent puppetserver git"
   - "ln -s /opt/puppetlabs/bin/puppet /opt/puppetlabs/bin/facter /opt/puppetlabs/bin/mco /usr/bin/"
   - "puppet resource host puppet ensure=present ip=127.0.0.1"
