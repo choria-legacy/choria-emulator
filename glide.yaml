@@ -1,11 +1,4 @@
 package: github.com/choria-io/choria-emulator
 import:
 - package: github.com/choria-io/go-choria
-  version: master
-  subpackages:
-  - mcollective
-  - protocol
-- package: github.com/sirupsen/logrus
-  version: ~1
-- package: gopkg.in/alecthomas/kingpin.v2
-  version: ^2.2.5
+  version: 0.10.0
