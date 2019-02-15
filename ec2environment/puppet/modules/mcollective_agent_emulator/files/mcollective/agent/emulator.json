@@ -1,0 +1,382 @@
+{
+  "$schema": "https://choria.io/schemas/mcorpc/ddl/v1/agent.json",
+  "metadata": {
+    "name": "emulator",
+    "description": "choria-emulator manager agent",
+    "author": "R.I.Pienaar <rip@devco.net>",
+    "license": "Apache-2.0",
+    "version": "0.0.1",
+    "url": "http://choria.io",
+    "timeout": 60
+  },
+  "actions": [
+    {
+      "action": "download",
+      "input": {
+        "http": {
+          "prompt": "Source URL",
+          "description": "HTTP or HTTPS URL to fetch the file from",
+          "type": "string",
+          "default": null,
+          "optional": false,
+          "validation": ".",
+          "maxlength": "256"
+        },
+        "target": {
+          "prompt": "Downloaded file to be stored here",
+          "description": "Name under /tmp/choria-emulator",
+          "type": "string",
+          "default": null,
+          "optional": false,
+          "validation": "^[a-zA-Z\\d\\.-]+$",
+          "maxlength": "256"
+        }
+      },
+      "output": {
+        "success": {
+          "description": "true if the file was downloaded successfully",
+          "display_as": "Downloaded",
+          "default": null
+        },
+        "size": {
+          "description": "Size of file downloaded",
+          "display_as": "Size",
+          "default": null
+        },
+        "md5": {
+          "description": "md5 hash of downloaded file",
+          "display_as": "MD5",
+          "default": ""
+        }
+      },
+      "display": "failed",
+      "description": "Downloads the emulator binary",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "success"
+          ]
+        },
+        {
+          "function": "summary",
+          "args": [
+            "size"
+          ]
+        },
+        {
+          "function": "summary",
+          "args": [
+            "md5"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "emulator_status",
+      "input": {
+        "port": {
+          "prompt": "Monitor Port",
+          "description": "Port to query for status",
+          "type": "integer",
+          "default": 8080,
+          "optional": false
+        }
+      },
+      "output": {
+        "name": {
+          "description": "Instance name",
+          "display_as": "Name",
+          "default": "unknown"
+        },
+        "running": {
+          "description": "Is the instance running",
+          "display_as": "Running",
+          "default": false
+        },
+        "pid": {
+          "description": "Running PID",
+          "display_as": "PID",
+          "default": -1
+        },
+        "tls": {
+          "description": "TLS Enabled",
+          "display_as": "TLS",
+          "default": false
+        },
+        "memory": {
+          "description": "Memory used in bytes",
+          "display_as": "Memory (B)",
+          "default": 0
+        },
+        "emulator": {
+          "description": "md5 hash of emulator binary",
+          "display_as": "Emulator",
+          "default": ""
+        }
+      },
+      "display": "always",
+      "description": "Status of the running emulator",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "running"
+          ]
+        },
+        {
+          "function": "summary",
+          "args": [
+            "tls"
+          ]
+        },
+        {
+          "function": "summary",
+          "args": [
+            "emulator"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "start",
+      "input": {
+        "name": {
+          "prompt": "Name",
+          "description": "Instance Name",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": "^\\w+$",
+          "maxlength": "16"
+        },
+        "instances": {
+          "prompt": "Instances",
+          "description": "Number of simulated choria instances the emulator will host",
+          "type": "integer",
+          "default": 1,
+          "optional": false
+        },
+        "agents": {
+          "prompt": "Agents",
+          "description": "Number of emulated* agents the emulator will host",
+          "type": "integer",
+          "default": 1,
+          "optional": false
+        },
+        "collectives": {
+          "prompt": "Subcollectives",
+          "description": "Number of subcollective the emulator will join",
+          "type": "integer",
+          "default": 1,
+          "optional": false
+        },
+        "servers": {
+          "prompt": "Servers to connect to",
+          "description": "Comma separated list of host:port pairs",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": ".",
+          "maxlength": 256
+        },
+        "monitor": {
+          "prompt": "Monitor Port",
+          "description": "Port to listen for monitoring requests",
+          "type": "integer",
+          "default": 8080,
+          "optional": false
+        },
+        "tls": {
+          "prompt": "TLS",
+          "description": "Run with TLS enabled",
+          "type": "boolean",
+          "default": false,
+          "optional": false
+        }
+      },
+      "output": {
+        "status": {
+          "description": "true if the emulator started",
+          "display_as": "Started",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Start an emulator instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "start_federation",
+      "input": {
+        "name": {
+          "prompt": "Collective Name",
+          "description": "The Collective Name this broker will serve",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": ".+",
+          "maxlength": 50
+        },
+        "tls": {
+          "prompt": "TLS",
+          "description": "Run with TLS enabled",
+          "type": "boolean",
+          "default": false,
+          "optional": false
+        },
+        "federation_servers": {
+          "prompt": "Federation Servers",
+          "description": "Federation NATS Servers, comma separated list of host:port pairs",
+          "type": "string",
+          "default": null,
+          "optional": false,
+          "validation": ".+",
+          "maxlength": 256
+        },
+        "collective_servers": {
+          "prompt": "Collective Servers",
+          "description": "Collective NATS Servers, comma separated list of host:port pairs",
+          "type": "string",
+          "default": "localhost:4222",
+          "optional": false,
+          "validation": ".+",
+          "maxlength": 256
+        }
+      },
+      "output": {
+        "running": {
+          "description": "true if the Federation Broker started",
+          "display_as": "Started",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Start a local Federation Broker instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "running"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "start_nats",
+      "input": {
+        "port": {
+          "prompt": "Client Port",
+          "description": "Port for clients to connect to",
+          "type": "integer",
+          "default": 4222,
+          "optional": false
+        },
+        "monitor_port": {
+          "prompt": "Monitor Port",
+          "description": 8222,
+          "type": "integer",
+          "default": null,
+          "optional": false
+        }
+      },
+      "output": {
+        "running": {
+          "description": "true if the NATS started",
+          "display_as": "Started",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Start a local NATS instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "running"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "stop",
+      "input": {
+        "port": {
+          "prompt": "Monitor Port",
+          "description": "Port to query for status",
+          "type": "integer",
+          "default": 8080,
+          "optional": false
+        }
+      },
+      "output": {
+        "status": {
+          "description": "true if the emulator stopped",
+          "display_as": "Stopped",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Stops the running emulator instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "status"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "stop_federation",
+      "input": {
+      },
+      "output": {
+        "stopped": {
+          "description": "true if the Federation Broker stopped",
+          "display_as": "Stopped",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Stops a running Federation Broker instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "stopped"
+          ]
+        }
+      ]
+    },
+    {
+      "action": "stop_nats",
+      "input": {
+      },
+      "output": {
+        "stopped": {
+          "description": "true if the NATS stopped",
+          "display_as": "Stopped",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Stops a running NATS instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "stopped"
+          ]
+        }
+      ]
+    }
+  ]
+}

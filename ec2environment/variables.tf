@@ -11,14 +11,14 @@ variable "shell_count" {
   default = 1
 }
 
-variable "nats_count" {
-  description = "Amount of NATS instances"
+variable "broker_count" {
+  description = "Amount of Broker instances"
   default = 1
 }
 
 variable "emulator_count" {
   description = "Amount of Emulator Instances"
-  default = 16
+  default = 1
 }
 
 variable "region" {
