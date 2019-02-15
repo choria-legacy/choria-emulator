@@ -8,7 +8,7 @@ It is likely that a single flat network will not perform to your needs and this 
   * Discovery time that, given optimal conditions, reliably discovers all your nodes
   * Number of agents you will be running
   * Number of sub collectives you will be running
-  * Max acceptible downtime you can experience when rebooting the middleware layer
+  * Max acceptable downtime you can experience when rebooting the middleware layer
 
 You have to supply the targets for these that fit your workloads and style.
 
@@ -21,9 +21,9 @@ This is primarily a research tool the Choria developers use to validate Choria a
 Expect the eventual outcome to be statements about the scalability of Choria given specific test environments.  But we'd like this to be usable and open so others can validate our methods and reproduce for their own networks.
 
 # Choria Emualtor
-As it's unrealistic that you'll have a 100 000 nodes just lying around your lab an emulator is included that creates multiple Choria instances in memory in a single process.
+As it's unrealistic that you'll have a 100 000 nodes just lying around your lab an emulator is included that creates multiple Choria instances in memory in a single process. The instances are not emulated as such they are running instances of the real Choria Server.
 
-Each instance can have a number of emulated agents, belong to many sub collectives and generally you'll be able to interact with them from the normal Choria `mco` CLI in representitive ways and it will generate traffic matching a real Choria.
+Each instance can have a number of emulated agents, belong to many sub collectives and generally you'll be able to interact with them from the normal Choria `mco` CLI in representative ways and it will generate traffic matching a real Choria.
 
 On my MBP I can run 2 000 instances of Choria along with a Choria Broker and the Choria client all on the same laptop and response times are around 1.5 seconds for all nodes. Of course what is realistic per VM varies on spec but I have had good success with 750-1000 emulated instances on a 2GB VM.
 
@@ -31,7 +31,7 @@ The idea is that you will use many VMs, say a few 100, deploy standard Choria to
 
 Each of these 100s of VMs can run, lets say, a thousand Choria instances at a time and you can point them at different topologies of NATS, Federation etc and do tests with different concurrencies and payload sizes.
 
-Using this is should be feasable to make realistic emulations of Choria networks with 100 000 to 300 000 nodes.
+Using this is should be feasible to make realistic emulations of Choria networks with 100 000 to 300 000 nodes.
 
 ## Instrumentation Tool
 

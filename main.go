@@ -1,9 +1,10 @@
 package main
 
-import (
-	"github.com/choria-io/choria-emulator/cmd"
-)
+import "github.com/choria-io/choria-emulator/emulator"
 
 func main() {
-	cmd.Run()
+	err := emulator.Run()
+	if err != nil {
+		panic(err)
+	}
 }
