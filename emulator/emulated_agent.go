@@ -1,107 +1,57 @@
 package emulator
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
+	"os"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/choria-io/go-choria/choria"
+	"github.com/choria-io/go-choria/server/agents"
+	"github.com/choria-io/mcorpc-agent-provider/mcorpc"
 )
 
-type EmulatedAgent struct {
-	license     string
-	author      string
-	timeout     int
-	name        string
-	version     string
-	url         string
-	description string
-	request     *RPCRequestBody
-}
-
-type RPCRequestBody struct {
-	Agent  string          `json:"agent"`
-	Action string          `json:"action"`
-	Data   *RPCRequestData `json:"data"`
-}
-
-type RPCRequestData struct {
+type GenerateRequest struct {
 	Size int `json:"size"`
 }
 
-type RPCReply struct {
-	Statuscode int           `json:"statuscode"`
-	Statusmsg  string        `json:"statusmsg"`
-	Data       *RPCReplyData `json:"data"`
-}
-
-type RPCReplyData struct {
+type GenerateReply struct {
 	Message string `json:"message"`
 }
 
-func (self *EmulatedAgent) Name() string {
-	return self.name
-}
-
-func (self *EmulatedAgent) Init() error {
-	self.license = "ASL-2.0"
-	self.author = "R.I.Pienaar <rip@devco.net>"
-	self.timeout = 2
-	self.version = "1.0.0"
-	self.url = "http://choria.io"
-	self.description = "Emulated Agent"
-
-	return nil
-}
-
-func (self *EmulatedAgent) newReply() *RPCReply {
-	reply := &RPCReply{
-		Statuscode: 0,
-		Statusmsg:  "OK",
-		Data:       &RPCReplyData{},
+func NewEmulatedAgent(fw *choria.Framework, count int) agents.Agent {
+	metadata := &agents.Metadata{
+		Name:        fmt.Sprintf("emulated%d", count),
+		Description: "Emulated Agent",
+		Author:      "R.I.Pienaar <rip@devco.net>",
+		Version:     "1.0.0",
+		License:     "Apache-2.0",
+		Timeout:     5,
+		URL:         "http://choria.io",
 	}
 
-	return reply
+	agent := mcorpc.New(metadata.Name, metadata, fw, fw.Logger(metadata.Name))
+	agent.MustRegisterAction("generate", generateAction)
+	agent.MustRegisterAction("exit_emulator", exitAction)
+
+	return agent
 }
 
-func (self *EmulatedAgent) requestFromMsg(msg string) (*RPCRequestBody, error) {
-	r := &RPCRequestBody{}
-
-	err := json.Unmarshal([]byte(msg), r)
-	if err != nil {
-		return nil, fmt.Errorf("Could not parse incoming request: %s", err.Error())
-	}
-
-	return r, nil
+func exitAction(ctx context.Context, req *mcorpc.Request, reply *mcorpc.Reply, agent *mcorpc.Agent, conn choria.ConnectorInfo) {
+	os.Exit(0)
 }
 
-func (self *EmulatedAgent) HandleAgentMsg(msg string) (*[]byte, error) {
-	reply := self.newReply()
-	request, err := self.requestFromMsg(msg)
-	if err != nil {
-		return nil, err
+func generateAction(ctx context.Context, req *mcorpc.Request, reply *mcorpc.Reply, agent *mcorpc.Agent, conn choria.ConnectorInfo) {
+	genreq := &GenerateRequest{}
+	if !mcorpc.ParseRequestData(genreq, req, reply) {
+		return
 	}
 
-	switch request.Action {
-	case "generate":
-		self.generateAction(request, reply)
-	default:
-		reply.Statuscode = 2
-		reply.Statusmsg = fmt.Sprintf("Unknown action %s", request.Action)
+	reply.Data = &GenerateReply{
+		Message: randomString(genreq.Size),
 	}
-
-	j, err := json.Marshal(&reply)
-	if err != nil {
-		log.Errorf("Could not marshall JSON reply: %s", err.Error())
-	}
-
-	return &j, nil
 }
 
-func (self *EmulatedAgent) generateAction(request *RPCRequestBody, reply *RPCReply) {
-	reply.Data.Message = self.randomString(request.Data.Size)
-}
-
-func (self *EmulatedAgent) randomString(strlen int) string {
+func randomString(strlen int) string {
 	chars := "01234567890"
 	result := ""
 
