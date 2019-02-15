@@ -2,7 +2,9 @@
 mcollective_agent_emulator::config_name: emulator
 mcollective_agent_emulator::common_files:
 - agent/emulated0.ddl
+- agent/emulated0.json
 - agent/emulator.ddl
+- agent/emulator.json
 mcollective_agent_emulator::common_directories: []
 mcollective_agent_emulator::server_files:
 - agent/emulator.rb
