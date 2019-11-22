@@ -24,7 +24,7 @@ func Run() error {
 	app.Flag("http-port", "Port to listen for /debug/vars").Short('p').Default("8080").IntVar(&statusPort)
 	app.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
 	app.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
-	app.Flag("secure", "Disable Choria protocol security").Default("false").BoolVar(&protocolSecure)
+	app.Flag("secure", "Enable Choria protocol security").Default("false").BoolVar(&protocolSecure)
 
 	kingpin.MustParse(app.Parse(os.Args[1:]))
 

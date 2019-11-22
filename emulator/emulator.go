@@ -8,7 +8,7 @@ import (
 	"github.com/choria-io/go-protocol/protocol"
 	"github.com/sirupsen/logrus"
 
-	"github.com/choria-io/go-choria/config"
+	"github.com/choria-io/go-config"
 
 	"github.com/choria-io/go-choria/choria"
 	"github.com/choria-io/go-choria/server"
@@ -49,12 +49,12 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 
 	log.Infof("Starting %d Choria Server instances each belonging to %d collective(s) with %d emulated agent(s)", instanceCount, collectiveCount, agentCount)
 
-	for instance := 1; instance <= instanceCount; instance++ {
-		name := fmt.Sprintf("%s-%d", name, instance)
+	for i := 1; i <= instanceCount; i++ {
+		name := fmt.Sprintf("%s-%d", name, i)
 		log.Infof("Creating instance %s", name)
-		srv, err := newInstance()
+		srv, err := newInstance(name)
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not start instance %d", instance)
+			return nil, errors.Wrapf(err, "could not start instance %d", i)
 		}
 
 		emulated = append(emulated, srv)
@@ -63,13 +63,13 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 	return emulated, nil
 }
 
-func newInstance() (instance *server.Instance, err error) {
+func newInstance(name string) (instance *server.Instance, err error) {
 	cfg, err := config.NewConfig(configFile)
 	if err != nil {
 		return nil, err
 	}
 
-	cfg.Identity = fmt.Sprintf("%s-%d", name, instance)
+	cfg.Identity = name
 	cfg.OverrideCertname = cfg.Identity
 	cfg.Collectives = []string{"mcollective"}
 	cfg.InitiatedByServer = true
