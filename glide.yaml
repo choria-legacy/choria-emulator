@@ -1,4 +1,0 @@
-package: github.com/choria-io/choria-emulator
-import:
-- package: github.com/choria-io/go-choria
-  version: 0.10.0
