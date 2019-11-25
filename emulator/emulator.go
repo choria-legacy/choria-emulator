@@ -13,7 +13,6 @@ import (
 	"github.com/choria-io/go-choria/choria"
 	"github.com/choria-io/go-choria/server"
 	gorpc "github.com/choria-io/mcorpc-agent-provider/mcorpc/golang"
-	"github.com/pkg/errors"
 )
 
 var (
@@ -36,6 +35,7 @@ var (
 	fw        *choria.Framework
 	instances []*server.Instance
 	log       *logrus.Entry
+	mu        *sync.Mutex
 )
 
 func NewEmulator() (emulated []*server.Instance, err error) {
@@ -51,15 +51,27 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 
 	log.Infof("Starting %d Choria Server instances each belonging to %d collective(s) with %d emulated agent(s)", instanceCount, collectiveCount, agentCount)
 
+	mu = &sync.Mutex{}
+
 	for i := 1; i <= instanceCount; i++ {
 		name := fmt.Sprintf("%s-%d", name, i)
 		log.Infof("Creating instance %s", name)
-		srv, err := newInstance(name)
-		if err != nil {
-			return nil, errors.Wrapf(err, "could not start instance %d", i)
+
+		wg.Add(1)
+		startf := func() {
+			defer wg.Done()
+			srv, err := newInstance(name)
+			if err != nil {
+				log.Errorf("Could not start instance %d: %s", i, err)
+				return
+			}
+
+			mu.Lock()
+			emulated = append(emulated, srv)
+			mu.Unlock()
 		}
 
-		emulated = append(emulated, srv)
+		go startf()
 	}
 
 	return emulated, nil
@@ -101,17 +113,22 @@ func newInstance(name string) (instance *server.Instance, err error) {
 
 	srv, err := server.NewInstance(ichoria)
 	if err != nil {
-		return nil, errors.Wrapf(err, "could not start instance %d", instance)
+		log.Errorf("Could not create instance %s: %s", name, err)
+		return
 	}
 
 	wg.Add(1)
 	err = srv.Run(ctx, wg)
+	if err != nil {
+		log.Errorf("Could not run instance %s: %s", name, err)
+		return
+	}
 
 	for i := 1; i <= agentCount; i++ {
 		agent := NewEmulatedAgent(ichoria, i)
 		err := srv.RegisterAgent(ctx, agent.Metadata().Name, agent)
 		if err != nil {
-			return nil, errors.Wrapf(err, "could not register agent %s", agent.Metadata().Name)
+			log.Errorf("Could not register agent %s: %s", agent.Metadata().Name, err)
 		}
 	}
 

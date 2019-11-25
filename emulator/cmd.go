@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/alecthomas/kingpin"
 	"github.com/choria-io/go-choria/choria"
@@ -54,6 +55,9 @@ func Run() error {
 	defer cancel()
 
 	go startHTTP()
+
+	time.Sleep(time.Second)
+
 	startInstances()
 
 	wg.Wait()
