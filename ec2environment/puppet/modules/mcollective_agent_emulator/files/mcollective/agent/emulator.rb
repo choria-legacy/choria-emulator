@@ -71,7 +71,7 @@ module MCollective
 
         run('(/tmp/choria-emulator/choria-emulator %s 2>&1 >> /tmp/choria-emulator/log &) &' % args.join(" "), :stdout => out, :stderr => err)
 
-        sleep 1
+        sleep 2
 
         reply[:status] = up?(request[:monitor])
       end
