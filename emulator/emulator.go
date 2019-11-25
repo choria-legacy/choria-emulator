@@ -98,9 +98,6 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		return nil, errors.Wrapf(err, "could not start instance %d", instance)
 	}
 
-	srv.DenyAgent("rpcutil")
-	srv.DenyAgent("choria_util")
-
 	wg.Add(1)
 	err = srv.Run(ctx, wg)
 

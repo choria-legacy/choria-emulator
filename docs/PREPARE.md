@@ -1,4 +1,4 @@
-# Environment Setup 
+# Environment Setup
 
 ## Requirements
 
@@ -8,7 +8,7 @@ You'll need the following:
   * 1 `Shell` node to run the tests from and gather stats
   * A number of `Emulator Nodes` to run the emulator on
   * 1, 3 or 5 nodes for `NATS` depending on your scenarios, these should not also run the emulator
-  * Copies of `gnatsd`, `choria-emulator` and `go-choria` hosted on a reachable webserver
+  * Copies of `nats-server` and `choria-emulator` hosted on a reachable webserver
   * All the nodes set up with latest Choria and communicating with the Puppet Master over a dedicated NATS running on the Puppet Master (example, just not on the test nodes
   * The emulator nodes must have the `mcollective_agent_emulator` module deployed on them
   * The shell node need the `mcollective_agent_emulator` but only it's client
@@ -17,7 +17,7 @@ You'll need the following:
 
 ## Prepare Emulators
 
-The emulators will need copies of `gnatsd`, `choria-emulator` and `go-choria` deployed on them, you can do this as follows:
+The emulators will need copies of `nats-server` and `choria-emulator` deployed on them, you can do this as follows:
 
 ```
 % touch ~/.choria-emulator.yaml

@@ -20,7 +20,8 @@ This is primarily a research tool the Choria developers use to validate Choria a
 
 Expect the eventual outcome to be statements about the scalability of Choria given specific test environments.  But we'd like this to be usable and open so others can validate our methods and reproduce for their own networks.
 
-# Choria Emualtor
+# Choria Emulator
+
 As it's unrealistic that you'll have a 100 000 nodes just lying around your lab an emulator is included that creates multiple Choria instances in memory in a single process. The instances are not emulated as such they are running instances of the real Choria Server.
 
 Each instance can have a number of emulated agents, belong to many sub collectives and generally you'll be able to interact with them from the normal Choria `mco` CLI in representative ways and it will generate traffic matching a real Choria.

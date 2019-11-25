@@ -103,15 +103,15 @@ module MCollective
       end
 
       action "start_nats" do
-        unless File.exist?("/tmp/choria-emulator/gnatsd")
-          reply.fail!("/tmp/choria-emulator/gnatsd does not exist")
+        unless File.exist?("/tmp/choria-emulator/nats-server")
+          reply.fail!("/tmp/choria-emulator/nats-server does not exist")
         end
 
         reply.fail!("NATS is already running") if nats_running?
 
-        FileUtils.chmod(0755, "/tmp/choria-emulator/gnatsd")
+        FileUtils.chmod(0755, "/tmp/choria-emulator/nats-server")
 
-        run('(/tmp/choria-emulator/gnatsd -T --log /tmp/choria-emulator/gnatsd.log --pid /tmp/choria-emulator/gnatsd.pid --port %s --http_port %s 2>&1 >> /tmp/choria-emulator/gnatsd.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %s --http_port %s 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
 
         sleep 1
 
@@ -120,7 +120,7 @@ module MCollective
 
       action "stop_nats" do
         if nats_running?
-          kill_pid("gnatsd.pid")
+          kill_pid("nats-server.pid")
           sleep 1
         end
 
@@ -134,7 +134,7 @@ module MCollective
 
         reply.fail("Federation Broker is already running") if federation_running?
 
-        File.open("/tmp/choria-emulator/choria.cfg", "w") do |cfg|
+        File.open("/tmp/choria-emulator/federation.cfg", "w") do |cfg|
           cfg.puts("identity = %s" % config.identity)
           cfg.puts("logfile = /tmp/choria-emulator/choria.log")
           cfg.puts("loglevel = info")
@@ -149,7 +149,7 @@ module MCollective
         tls = request[:tls] ? "" : "--disable-tls"
 
         Log.debug(request[:tls])
-        run('(/tmp/choria-emulator/choria broker run --pid /tmp/choria-emulator/choria.pid --config /tmp/choria-emulator/choria.cfg %s 2>&1 >> /tmp/choria-emulator/choria.log & ) &' % tls, :stdout => (out=[]), :stderr => (err=[]))
+        run('(/tmp/choria-emulator/choria broker run --pid /tmp/choria-emulator/federation.pid --config /tmp/choria-emulator/federation.cfg %s 2>&1 >> /tmp/choria-emulator/federation.log & ) &' % tls, :stdout => (out=[]), :stderr => (err=[]))
         Log.debug(out.inspect)
         Log.debug(err.inspect)
 
@@ -160,7 +160,7 @@ module MCollective
 
       action "stop_federation" do
         if federation_running?
-          kill_pid("choria.pid")
+          kill_pid("federation.pid")
           sleep 1
         end
 
@@ -168,11 +168,11 @@ module MCollective
       end
 
       def federation_running?
-        pid_running?("choria.pid")
+        pid_running?("federation.pid")
       end
 
       def nats_running?
-        pid_running?("gnatsd.pid")
+        pid_running?("nats-server.pid")
       end
 
       def kill_pid(pidfile)
