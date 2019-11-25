@@ -11,3 +11,7 @@ classes:
 limits::entries:
   "root/nofile":
     both: 1048576
+
+mcollective_choria::gem_dependencies:
+  nats-pure: "0.6.2"
+  nkeys: "0.1.0"

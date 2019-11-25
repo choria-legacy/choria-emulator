@@ -166,7 +166,8 @@ action "start", :description => "Start an emulator instance" do
         :prompt => "Credentials",
         :type => :string,
         :optional => true,
-        :maxlength => 2048
+        :maxlength => 2048,
+        :validation => "."
 
   output :status,
          :description => "true if the emulator started",
