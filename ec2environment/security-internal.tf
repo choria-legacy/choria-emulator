@@ -1,12 +1,12 @@
 resource "aws_security_group" "internal" {
-  name = "internal"
-  vpc_id = "${aws_vpc.choria_emulator.id}"
+  name   = "internal"
+  vpc_id = aws_vpc.choria_emulator.id
 
   ingress {
-    from_port   = "0"
-    to_port     = "0"
-    protocol    = "-1"
-    self        = true
+    from_port = "0"
+    to_port   = "0"
+    protocol  = "-1"
+    self      = true
   }
 
   egress {
