@@ -161,6 +161,13 @@ action "start", :description => "Start an emulator instance" do
         :optional => false,
         :default => false
 
+  input :credentials,
+        :description => "Base64 encoded credentials to use when connecting to NATS",
+        :prompt => "Credentials",
+        :type => :string,
+        :optional => true,
+        :maxlength => 2048
+
   output :status,
          :description => "true if the emulator started",
          :display_as => "Started"

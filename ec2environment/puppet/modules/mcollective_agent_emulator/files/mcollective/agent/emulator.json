@@ -20,7 +20,7 @@
           "default": null,
           "optional": false,
           "validation": ".",
-          "maxlength": "256"
+          "maxlength": 256
         },
         "target": {
           "prompt": "Downloaded file to be stored here",
@@ -29,7 +29,7 @@
           "default": null,
           "optional": false,
           "validation": "^[a-zA-Z\\d\\.-]+$",
-          "maxlength": "256"
+          "maxlength": 256
         }
       },
       "output": {
@@ -148,7 +148,7 @@
           "default": null,
           "optional": true,
           "validation": "^\\w+$",
-          "maxlength": "16"
+          "maxlength": 16
         },
         "instances": {
           "prompt": "Instances",
@@ -179,6 +179,15 @@
           "optional": true,
           "validation": ".",
           "maxlength": 256
+        },
+        "credentials": {
+          "prompt": "Credentials",
+          "description": "Base64 encoded credentials to use when connecting to NATS",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": ".",
+          "maxlength": 2048
         },
         "monitor": {
           "prompt": "Monitor Port",
@@ -281,9 +290,9 @@
         },
         "monitor_port": {
           "prompt": "Monitor Port",
-          "description": 8222,
+          "description": "The port to listen on for monitoring requests",
           "type": "integer",
-          "default": null,
+          "default": 8222,
           "optional": false
         }
       },
@@ -336,8 +345,7 @@
     },
     {
       "action": "stop_federation",
-      "input": {
-      },
+      "input": {},
       "output": {
         "stopped": {
           "description": "true if the Federation Broker stopped",
@@ -358,8 +366,7 @@
     },
     {
       "action": "stop_nats",
-      "input": {
-      },
+      "input": {},
       "output": {
         "stopped": {
           "description": "true if the NATS stopped",

@@ -1,4 +1,5 @@
 require 'net/http'
+require 'base64'
 
 module MCollective
   module Agent
@@ -45,6 +46,12 @@ module MCollective
         args << "--agents %d" % request[:agents] if request[:agents]
         args << "--collectives %d" % request[:collectives] if request[:collectives]
         args << "--tls" if request[:tls]
+
+        if request[:credentials]
+          creds = Base64.decode64(request[:credentials])
+          File.open("/tmp/choria-emulator/credentials", "w") {|f| f.print(creds)}
+          args << "--credentials /tmp/choria-emulator/credentials"
+        end
 
         if request[:name]
           args << "--name %s" % request[:name]

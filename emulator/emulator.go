@@ -27,13 +27,15 @@ var (
 	enableTLSVerify bool
 	protocolSecure  bool
 	brokers         []string
-	err             error
-	ctx             context.Context
-	cancel          func()
-	wg              *sync.WaitGroup
-	fw              *choria.Framework
-	instances       []*server.Instance
-	log             *logrus.Entry
+	credentials     string
+
+	err       error
+	ctx       context.Context
+	cancel    func()
+	wg        *sync.WaitGroup
+	fw        *choria.Framework
+	instances []*server.Instance
+	log       *logrus.Entry
 )
 
 func NewEmulator() (emulated []*server.Instance, err error) {
@@ -91,6 +93,10 @@ func newInstance(name string) (instance *server.Instance, err error) {
 
 	if len(brokers) > 0 {
 		ichoria.Config.Choria.MiddlewareHosts = brokers
+	}
+
+	if credentials != "" {
+		ichoria.Configuration().Choria.NatsCredentials = credentials
 	}
 
 	srv, err := server.NewInstance(ichoria)
