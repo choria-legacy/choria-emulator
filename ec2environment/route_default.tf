@@ -4,7 +4,7 @@ resource "aws_route_table" "default" {
     cidr_block = "0.0.0.0/0"
     gateway_id = aws_internet_gateway.gateway.id
   }
-  tags {
+  tags = {
     Project = "choria_emulator"
   }
 }

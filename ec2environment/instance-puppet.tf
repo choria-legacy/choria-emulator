@@ -17,6 +17,6 @@ resource "aws_instance" "puppetmaster" {
 }
 
 output "puppetmaster" {
-  value = aws_instance.puppetmaster.public_dns
+  value = aws_instance.puppetmaster[0].public_dns
 }
 

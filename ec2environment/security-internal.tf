@@ -17,7 +17,7 @@ resource "aws_security_group" "internal" {
     cidr_blocks = ["0.0.0.0/0"]
   }
 
-  tags {
+  tags = {
     Project = "choria_emulator"
   }
 }

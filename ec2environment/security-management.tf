@@ -8,7 +8,7 @@ resource "aws_security_group" "management" {
     cidr_blocks = ["139.162.163.118/32", "84.255.40.82/32"]
   }
 
-  tags {
+  tags = {
     Project = "choria_test"
   }
 }

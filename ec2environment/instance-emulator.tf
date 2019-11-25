@@ -1,7 +1,7 @@
 resource "template_file" "emulator_init" {
   template = file("cloud-init/common.txt")
-  vars {
-    puppet_master_ip = aws_instance.puppetmaster.private_ip
+  vars = {
+    puppet_master_ip = aws_instance.puppetmaster[0].private_ip
     role             = "emulator"
   }
 }

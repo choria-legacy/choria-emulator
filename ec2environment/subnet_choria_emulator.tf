@@ -4,7 +4,7 @@ resource "aws_subnet" "choria_emulator" {
   availability_zone       = var.avail_zone
   map_public_ip_on_launch = true
   depends_on              = [aws_internet_gateway.gateway]
-  tags {
+  tags = {
     Project = "choria_emulator"
   }
 }
