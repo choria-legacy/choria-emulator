@@ -16,5 +16,6 @@ runcmd:
   - "ln -s /opt/puppetlabs/bin/puppet /opt/puppetlabs/bin/facter /opt/puppetlabs/bin/mco /usr/bin/"
   - "/opt/puppetlabs/bin/puppet resource host puppet ensure=present ip=${puppet_master_ip}"
   - "echo role=${role} > /opt/puppetlabs/facter/facts.d/role.txt"
+  - "echo region=${region} > /opt/puppetlabs/facter/facts.d/region.txt"
   - "/opt/puppetlabs/bin/puppet config set --section main waitforcert 10"
   - "systemctl start puppet.service"

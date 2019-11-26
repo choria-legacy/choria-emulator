@@ -1,3 +1,5 @@
+data "aws_region" "current" {}
+
 variable "vpc_id" {
   description = "ID of the VPC holding the control plane"
 }

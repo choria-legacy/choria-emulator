@@ -17,6 +17,7 @@ runcmd:
   - "echo '  pp_preshared_key: ${puppet_psk}' >> /etc/puppetlabs/puppet/csr_attributes.yaml"
   - "echo '${puppet_psk}' > /etc/puppetlabs/puppet/psk.txt"
   - "echo role=puppet_master > /opt/puppetlabs/facter/facts.d/role.txt"
+  - "echo region=${region} > /opt/puppetlabs/facter/facts.d/region.txt"
   - "cd /tmp;git clone https://github.com/choria-io/choria-emulator.git"
   - "mkdir -p /etc/puppetlabs/code/environments/production"
   - "cp -fr /tmp/choria-emulator/ec2environment/puppet/* /etc/puppetlabs/code/environments/production/"

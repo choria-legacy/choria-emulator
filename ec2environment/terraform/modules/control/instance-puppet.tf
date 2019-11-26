@@ -2,6 +2,7 @@ data "template_file" "puppetmaster_init" {
   template = file("cloud-init/puppet-master.txt")
   vars = {
     puppet_psk = var.puppet_psk
+    region     = data.aws_region.current.name
   }
 }
 

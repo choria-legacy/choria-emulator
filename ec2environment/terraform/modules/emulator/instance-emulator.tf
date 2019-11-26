@@ -1,9 +1,12 @@
+data "aws_region" "current" {}
+
 data "template_file" "emulator_init" {
   template = file("cloud-init/common.txt")
   vars = {
     puppet_master_ip = var.puppetmaster_ip
     role             = "emulator"
     puppet_psk       = var.puppet_psk
+    region           = data.aws_region.current.name
   }
 }
 

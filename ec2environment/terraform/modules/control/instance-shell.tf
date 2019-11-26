@@ -4,6 +4,7 @@ data "template_file" "shell_init" {
     puppet_master_ip = module.puppetmaster.private_ips[0]
     role             = "shell"
     puppet_psk       = var.puppet_psk
+    region           = data.aws_region.current.name
   }
 }
 
