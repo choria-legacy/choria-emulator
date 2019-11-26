@@ -116,7 +116,7 @@ action "start", :description => "Start an emulator instance" do
         :type => :string,
         :optional => true,
         :maxlength => "16",
-        :validation => '^\w+$'
+        :validation => '^[\w-_]+$'
 
   input :instances,
         :prompt => "Instances",
