@@ -10,5 +10,5 @@ function emulator::regions() {
 
   $regions.ok_set.map |$r| {
     $r["data"]["value"]
-  }
+  }.sort.unique
 }
