@@ -9,7 +9,7 @@ module "puppetmaster" {
   source = "../instance"
 
   subnet_id          = var.network_id
-  security_group_ids = var.security_group_ids
+  security_group_ids = concat(var.security_group_ids, [aws_security_group.puppet.id])
   user_data          = data.template_file.puppetmaster_init.rendered
   tags               = var.tags
 }

@@ -1,3 +1,7 @@
+variable "vpc_id" {
+  description = "ID of the VPC holding the control plane"
+}
+
 variable "network_id" {
   description = "ID of the network to place the instances in"
 }
@@ -14,4 +18,9 @@ variable "tags" {
 
 variable "puppet_psk" {
   description = "A PSK to bake into puppet certs and to autosign with, should be unique to you and not shared"
+}
+
+variable "emulator_networks" {
+  description = "CIDRs for places emulators run, in a multi region AWS setup its ok to just set to 0.0.0.0/0"
+  type = list(string)
 }
