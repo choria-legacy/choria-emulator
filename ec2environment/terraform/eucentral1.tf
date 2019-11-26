@@ -26,6 +26,8 @@ module "control" {
   network_id         = module.network.subnet_id
   security_group_ids = [module.network.internal_security_group_id, module.network.management_security_group_id]
   puppet_psk         = var.puppet_psk
+  emulator_networks  = var.emulator_networks
+  vpc_id             = module.network.vpc_id
 
   providers = {
     aws = aws.eucentral1
