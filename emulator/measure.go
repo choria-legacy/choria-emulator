@@ -117,6 +117,7 @@ func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer) error {
 			return err
 		}
 
+		opts = append(opts, mco.BroadcastRequest())
 		opts = append(opts, mco.Filter(f))
 		opts = append(opts, mco.DiscoveryTimeout(dt))
 	}

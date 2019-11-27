@@ -52,9 +52,10 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 	log.Infof("Starting %d Choria Server instances each belonging to %d collective(s) with %d emulated agent(s)", instanceCount, collectiveCount, agentCount)
 
 	mu = &sync.Mutex{}
+	instanceID, _ := choria.NewRequestID()
 
 	for i := 1; i <= instanceCount; i++ {
-		name := fmt.Sprintf("%s-%d", name, i)
+		name := fmt.Sprintf("%s-%s-%d", name, instanceID[1:6], i)
 		log.Infof("Creating instance %s", name)
 
 		wg.Add(1)
@@ -71,7 +72,7 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 			mu.Unlock()
 		}
 
-		go startf()
+		startf()
 	}
 
 	return emulated, nil
@@ -94,6 +95,11 @@ func newInstance(name string) (instance *server.Instance, err error) {
 	cfg.DisableTLS = !enableTLS
 	cfg.DisableTLSVerify = !enableTLSVerify
 	cfg.Choria.UseSRVRecords = false
+	cfg.Choria.SecurityProvider = "file"
+
+	if cfg.DisableTLS {
+		cfg.Choria.SSLDir = "/nonexisting"
+	}
 
 	ichoria, err := choria.NewWithConfig(cfg)
 	if err != nil {
