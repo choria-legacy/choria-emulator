@@ -93,6 +93,7 @@ func newInstance(name string) (instance *server.Instance, err error) {
 
 	cfg.DisableTLS = !enableTLS
 	cfg.DisableTLSVerify = !enableTLSVerify
+	cfg.Choria.UseSRVRecords = false
 
 	ichoria, err := choria.NewWithConfig(cfg)
 	if err != nil {
@@ -124,7 +125,7 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		return
 	}
 
-	for i := 1; i <= agentCount; i++ {
+	for i := 0; i < agentCount; i++ {
 		agent := NewEmulatedAgent(ichoria, i)
 		err := srv.RegisterAgent(ctx, agent.Metadata().Name, agent)
 		if err != nil {
