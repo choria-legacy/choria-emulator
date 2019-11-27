@@ -3,6 +3,7 @@ package emulator
 import (
 	"encoding/csv"
 	"fmt"
+	"math"
 	"os"
 	"path/filepath"
 	"strconv"
@@ -45,6 +46,12 @@ func startMeasure() error {
 	}
 	defer requestTimes.Close()
 
+	timeBuckets, err := os.Create(filepath.Join(outDir, "time_buckets.csv"))
+	if err != nil {
+		return fmt.Errorf("could not open stats: %w", err)
+	}
+	defer requestTimes.Close()
+
 	log.Infof("Performing discovery of nodes with the emulator0 agent")
 	nodes, err := discover()
 	if err != nil {
@@ -59,9 +66,15 @@ func startMeasure() error {
 
 	rm := csv.NewWriter(requestMetrics)
 	rt := csv.NewWriter(requestTimes)
+	tb := csv.NewWriter(timeBuckets)
 
 	for i := 1; i <= testCount; i++ {
-		runTest(i, nodes, rm, rt)
+		runTest(i, nodes, rm, rt, tb)
+	}
+
+	tb.Flush()
+	if err = rm.Error(); err != nil {
+		log.Errorf("could not flush request metrics: %s", err)
 	}
 
 	rm.Flush()
@@ -77,7 +90,28 @@ func startMeasure() error {
 	return nil
 }
 
-func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer) error {
+func timeBuckets(times []time.Duration, interval float64) []string {
+	max := times[len(times)-1]
+	nbuckets := math.Round(float64(max.Seconds())/interval) + 1
+	buckets := make([]int, int(nbuckets))
+
+	for i := 0; i < len(buckets); i++ {
+		buckets[i] = 0
+	}
+
+	for _, t := range times {
+		buckets[int(math.Round(float64(t.Seconds())/interval))]++
+	}
+
+	out := make([]string, len(buckets))
+	for i, c := range buckets {
+		out[i] = strconv.Itoa(c)
+	}
+
+	return out
+}
+
+func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer, tb *csv.Writer) error {
 	log.Debugf("Starting test %d", c)
 
 	type genRequest struct {
@@ -194,6 +228,12 @@ func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer) error {
 		log.Infof(logline)
 	} else {
 		log.Errorf(logline)
+	}
+
+	tb.Write(timeBuckets(times, 0.01))
+	err = rm.Error()
+	if err != nil {
+		log.Errorf("could not write time buckets: %s", err)
 	}
 
 	return nil
