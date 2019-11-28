@@ -147,7 +147,7 @@
           "type": "string",
           "default": null,
           "optional": true,
-          "validation": "^\\w+$",
+          "validation": "^[\\w\\-_]+$",
           "maxlength": 16
         },
         "instances": {
