@@ -73,7 +73,7 @@
       ]
     },
     {
-      "action": "emulator_status",
+      "action": "status",
       "input": {
         "port": {
           "prompt": "Monitor Port",
@@ -223,62 +223,6 @@
       ]
     },
     {
-      "action": "start_federation",
-      "input": {
-        "name": {
-          "prompt": "Collective Name",
-          "description": "The Collective Name this broker will serve",
-          "type": "string",
-          "default": null,
-          "optional": true,
-          "validation": ".+",
-          "maxlength": 50
-        },
-        "tls": {
-          "prompt": "TLS",
-          "description": "Run with TLS enabled",
-          "type": "boolean",
-          "default": false,
-          "optional": false
-        },
-        "federation_servers": {
-          "prompt": "Federation Servers",
-          "description": "Federation NATS Servers, comma separated list of host:port pairs",
-          "type": "string",
-          "default": null,
-          "optional": false,
-          "validation": ".+",
-          "maxlength": 256
-        },
-        "collective_servers": {
-          "prompt": "Collective Servers",
-          "description": "Collective NATS Servers, comma separated list of host:port pairs",
-          "type": "string",
-          "default": "localhost:4222",
-          "optional": false,
-          "validation": ".+",
-          "maxlength": 256
-        }
-      },
-      "output": {
-        "running": {
-          "description": "true if the Federation Broker started",
-          "display_as": "Started",
-          "default": null
-        }
-      },
-      "display": "failed",
-      "description": "Start a local Federation Broker instance",
-      "aggregate": [
-        {
-          "function": "summary",
-          "args": [
-            "running"
-          ]
-        }
-      ]
-    },
-    {
       "action": "start_nats",
       "input": {
         "port": {
@@ -339,27 +283,6 @@
           "function": "summary",
           "args": [
             "status"
-          ]
-        }
-      ]
-    },
-    {
-      "action": "stop_federation",
-      "input": {},
-      "output": {
-        "stopped": {
-          "description": "true if the Federation Broker stopped",
-          "display_as": "Stopped",
-          "default": null
-        }
-      },
-      "display": "failed",
-      "description": "Stops a running Federation Broker instance",
-      "aggregate": [
-        {
-          "function": "summary",
-          "args": [
-            "stopped"
           ]
         }
       ]

@@ -13,6 +13,14 @@ plan emulator::regional_start (
     fail("no region data found")
   }
 
+  $_servers = emulator::data("emulator_servers", $servers)
+  
+  if $credentials {
+    $_creds = emulator::data("emulator_credentials", $credentials)
+  } else {
+    $_creds = undef
+  }
+
   info(sprintf("Starting %d regions", $regions.length))
 
   $regions.each |$region| {
@@ -20,9 +28,9 @@ plan emulator::regional_start (
 
     choria::run_playbook("emulator::start",   
       "region" => $region,
-      "servers" => $servers,
+      "servers" => $_servers,
       "tls" => $tls,
-      "credentials" => $credentials,
+      "credentials" => $_creds,
       "monitor" => $monitor,
       "instances" => $instances,
       "agents" => $agents,

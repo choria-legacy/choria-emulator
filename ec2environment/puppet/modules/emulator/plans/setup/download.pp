@@ -1,26 +1,32 @@
 plan emulator::setup::download (
   Optional[String] $emulator_url = undef,
+  Optional[String] $nats_url = undef,
 ) {
-  if $emulator_url {
-    choria::data("emulator_url", $emulator_url, emulator::ds())
-    $_emulator = $emulator_url
-  } else {
-    $_emulator = choria::data("emulator_url", emulator::ds())
-  }
-
+  $_emu_url = emulator::data("emulator_url", $emulator_url)
+  $_nats_url = emulator::data("emulator_url", $nats_url)
   $emulators = emulator::all_nodes()
 
+  info("Downloading choria-emulator from ${_emu_url}")
   choria::task("mcollective",
     "nodes" => $emulators,
     "action" => "emulator.download",
     "batch_size" => 10,
     "silent" => true,
-    "post" => ["summarize"],
     "properties" => {
-      "http" => $_emulator,
+      "http" => $_emu_url,
       "target" => "choria-emulator"
     }
   ) 
 
-  sprintf("Downloaded choria-emulator from %s to %d nodes", $_emulator, $emulators.length)
+  info("Downloading nats-server from ${_nats_url}")
+  choria::task("mcollective",
+    "nodes" => $emulators,
+    "action" => "emulator.download",
+    "batch_size" => 10,
+    "silent" => true,
+    "properties" => {
+      "http" => $_nats_url,
+      "target" => "nats-server"
+    }
+  ) 
 }

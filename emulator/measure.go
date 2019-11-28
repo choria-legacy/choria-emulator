@@ -1,15 +1,14 @@
 package emulator
 
 import (
-	"encoding/csv"
 	"fmt"
 	"math"
-	"os"
 	"path/filepath"
 	"strconv"
 	"sync"
 	"time"
 
+	"github.com/choria-io/go-choria/choria"
 	"github.com/choria-io/go-client/client"
 	"github.com/choria-io/go-client/discovery/broadcast"
 	"github.com/choria-io/go-protocol/protocol"
@@ -27,33 +26,59 @@ var (
 	dt time.Duration
 )
 
-type measureStats struct {
-	times []time.Duration
-	stats *mco.Stats
+type Measure struct {
+	TestDescription string `json:"description"`
+	OutputDir       string `json:"output_dir"`
+	PayloadSize     int    `json:"payload_size"`
+	Count           int    `json:"count"`
+
 	sync.Mutex
+
+	fw         *choria.Framework
+	requestCSV *CSV
+	timesCSV   *CSV
+	bucketsCSV *CSV
 }
 
-func startMeasure() error {
-	requestMetrics, err := os.Create(filepath.Join(outDir, "requests.csv"))
-	if err != nil {
-		return fmt.Errorf("could not open stats: %w", err)
-	}
-	defer requestMetrics.Close()
+func NewMeasure() (*Measure, error) {
+	return &Measure{
+		TestDescription: description,
+		OutputDir:       outDir,
+		PayloadSize:     payloadSize,
+		Count:           testCount,
+		fw:              fw,
+	}, nil
+}
 
-	requestTimes, err := os.Create(filepath.Join(outDir, "times.csv"))
+func (m *Measure) Close() {
+	err := m.requestCSV.Close()
 	if err != nil {
-		return fmt.Errorf("could not open stats: %w", err)
+		log.Errorf("could not close request csv: %s", err)
 	}
-	defer requestTimes.Close()
 
-	timeBuckets, err := os.Create(filepath.Join(outDir, "time_buckets.csv"))
+	err = m.timesCSV.Close()
 	if err != nil {
-		return fmt.Errorf("could not open stats: %w", err)
+		log.Errorf("could not close times csv: %s", err)
 	}
-	defer requestTimes.Close()
+
+	err = m.bucketsCSV.Close()
+	if err != nil {
+		log.Errorf("could not close time buckets csv: %s", err)
+	}
+}
+
+func (m *Measure) MustOpen() {
+	m.requestCSV = MustNewCSV(filepath.Join(m.OutputDir, "requests.csv"))
+	m.timesCSV = MustNewCSV(filepath.Join(m.OutputDir, "times.csv"))
+	m.bucketsCSV = MustNewCSV(filepath.Join(m.OutputDir, "time_buckets.csv"))
+}
+
+func (m *Measure) Measure() error {
+	m.MustOpen()
+	defer m.Close()
 
 	log.Infof("Performing discovery of nodes with the emulator0 agent")
-	nodes, err := discover()
+	nodes, err := m.discover()
 	if err != nil {
 		return fmt.Errorf("could not perform discovery: %w", err)
 	}
@@ -62,56 +87,105 @@ func startMeasure() error {
 		return fmt.Errorf("did not discover any nodes")
 	}
 
-	log.Infof("Performing %d tests against %d nodes with a payload of %d bytes, reports in %s", testCount, len(nodes), payloadSize, outDir)
-
-	rm := csv.NewWriter(requestMetrics)
-	rt := csv.NewWriter(requestTimes)
-	tb := csv.NewWriter(timeBuckets)
+	log.Infof("Performing %d tests against %d nodes with a payload of %d bytes, reports in %s", m.Count, len(nodes), m.PayloadSize, m.OutputDir)
 
 	for i := 1; i <= testCount; i++ {
-		runTest(i, nodes, rm, rt, tb)
-	}
-
-	tb.Flush()
-	if err = rm.Error(); err != nil {
-		log.Errorf("could not flush request metrics: %s", err)
-	}
-
-	rm.Flush()
-	if err = rm.Error(); err != nil {
-		log.Errorf("could not flush request metrics: %s", err)
-	}
-
-	rt.Flush()
-	if err = rt.Error(); err != nil {
-		log.Errorf("could not flush request times: %s", err)
+		err = m.runTest(i, nodes)
+		if err != nil {
+			log.Errorf("Test %d failed: %s", i, err)
+		}
 	}
 
 	return nil
 }
 
-func timeBuckets(times []time.Duration, interval float64) []string {
-	max := times[len(times)-1]
-	nbuckets := math.Round(float64(max.Seconds())/interval) + 1
-	buckets := make([]int, int(nbuckets))
-
-	for i := 0; i < len(buckets); i++ {
-		buckets[i] = 0
+func (m *Measure) saveTimes(times []time.Duration) error {
+	stimes := make([]string, len(times))
+	for i, t := range times {
+		stimes[i] = strconv.Itoa(int(t))
 	}
 
-	for _, t := range times {
-		buckets[int(math.Round(float64(t.Seconds())/interval))]++
-	}
-
-	out := make([]string, len(buckets))
-	for i, c := range buckets {
-		out[i] = strconv.Itoa(c)
-	}
-
-	return out
+	return m.timesCSV.Write(stimes)
 }
 
-func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer, tb *csv.Writer) error {
+func (m *Measure) saveTimeBuckets(times []time.Duration) error {
+	return m.bucketsCSV.Write(m.timeBuckets(times, 0.01))
+}
+
+func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error {
+	dd := time.Duration(0)
+	if !forceDirect {
+		dd, err = stats.DiscoveryDuration()
+		if err != nil {
+			return fmt.Errorf("could not determine discovery time: %s", err)
+		}
+	}
+
+	pd, err := stats.PublishDuration()
+	if err != nil {
+		return fmt.Errorf("could not determine publish time: %s", err)
+	}
+
+	rd, err := stats.RequestDuration()
+	if err != nil {
+		return fmt.Errorf("could not determine total duration: %s", err)
+	}
+
+	if c == 1 {
+		m.requestCSV.Write([]string{"test", "description", "payload_bytes", "expected", "discovered", "discovery_duration", "publish_duration", "request_duration", "failed", "ok", "noresponses", "unexpected", "responded"})
+	}
+
+	rstats := []string{
+		strconv.Itoa(c),
+		description,
+		strconv.Itoa(payloadSize),
+		strconv.Itoa(len(nodes)),
+		strconv.Itoa(stats.DiscoveredCount()),
+		strconv.Itoa(int(dd)),
+		strconv.Itoa(int(pd)),
+		strconv.Itoa(int(rd)),
+		strconv.Itoa(stats.FailCount()),
+		strconv.Itoa(stats.OKCount()),
+		strconv.Itoa(len(stats.NoResponseFrom())),
+		strconv.Itoa(len(stats.UnexpectedResponseFrom())),
+		strconv.Itoa(stats.ResponsesCount()),
+	}
+
+	err = m.requestCSV.Write(rstats)
+	if err != nil {
+		return fmt.Errorf("could not write measurement: %s", err)
+	}
+
+	logline := fmt.Sprintf("REQUEST #: %-4d OK: %d / %d ELAPSED TIME: %v", c, stats.OKCount(), len(nodes), dd+pd+rd)
+	if stats.OKCount() == len(nodes) {
+		log.Infof(logline)
+	} else {
+		log.Errorf(logline)
+	}
+
+	return nil
+}
+
+func (m *Measure) recordStats(c int, nodes []string, stats *mco.Stats, times []time.Duration) error {
+	err := m.saveRequestData(c, nodes, stats)
+	if err != nil {
+		return fmt.Errorf("could not write request data: %s", err)
+	}
+
+	err = m.saveTimes(times)
+	if err != nil {
+		return fmt.Errorf("could not write times: %s", err)
+	}
+
+	err = m.saveTimeBuckets(times)
+	if err != nil {
+		return fmt.Errorf("could not write time buckets: %s", err)
+	}
+
+	return nil
+}
+
+func (m *Measure) runTest(c int, nodes []string) error {
 	log.Debugf("Starting test %d", c)
 
 	type genRequest struct {
@@ -124,13 +198,12 @@ func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer, tb *csv.Writ
 	}
 
 	times := []time.Duration{}
-	mu := &sync.Mutex{}
 	var startTime time.Time
 
 	f := func(pr protocol.Reply, rpcr *mco.RPCReply) {
-		mu.Lock()
+		m.Lock()
 		times = append(times, time.Now().Sub(startTime))
-		mu.Unlock()
+		m.Unlock()
 
 		if rpcr.Statuscode != mcorpc.OK {
 			log.Errorf("......response from %s: %s", pr.SenderID(), rpcr.Statusmsg)
@@ -164,83 +237,18 @@ func runTest(c int, nodes []string, rm *csv.Writer, rt *csv.Writer, tb *csv.Writ
 		return err
 	}
 
-	stats := result.Stats()
-
-	stimes := make([]string, len(times))
-	for i, t := range times {
-		stimes[i] = strconv.Itoa(int(t))
-	}
-
-	rt.Write(stimes)
-	err = rt.Error()
+	err = m.recordStats(c, nodes, result.Stats(), times)
 	if err != nil {
-		log.Errorf("could not write times: %s", err)
-	}
-
-	dd := time.Duration(0)
-	if !forceDirect {
-		dd, err = stats.DiscoveryDuration()
-		if err != nil {
-			log.Errorf("could not determine discovery time: %s", err)
-		}
-	}
-
-	pd, err := stats.PublishDuration()
-	if err != nil {
-		log.Errorf("could not determine publish time: %s", err)
-	}
-
-	rd, err := stats.RequestDuration()
-	if err != nil {
-		log.Errorf("could not determine total duration: %s", err)
-	}
-
-	if c == 1 {
-		rm.Write([]string{"test", "description", "payload_bytes", "expected", "discovered", "discovery_duration", "publish_duration", "request_duration", "failed", "ok", "noresponses", "unexpected", "responded"})
-	}
-
-	rstats := []string{
-		strconv.Itoa(c),
-		description,
-		strconv.Itoa(payloadSize),
-		strconv.Itoa(len(nodes)),
-		strconv.Itoa(stats.DiscoveredCount()),
-		strconv.Itoa(int(dd)),
-		strconv.Itoa(int(pd)),
-		strconv.Itoa(int(rd)),
-		strconv.Itoa(stats.FailCount()),
-		strconv.Itoa(stats.OKCount()),
-		strconv.Itoa(len(stats.NoResponseFrom())),
-		strconv.Itoa(len(stats.UnexpectedResponseFrom())),
-		strconv.Itoa(stats.ResponsesCount()),
-	}
-
-	rm.Write(rstats)
-	err = rm.Error()
-	if err != nil {
-		log.Errorf("could not write measurement: %s", err)
+		log.Errorf("could not save stats: %s", err)
 	}
 
 	log.Debugf("...finished request")
 
-	logline := fmt.Sprintf("REQUEST #: %-4d OK: %d / %d ELAPSED TIME: %v", c, stats.OKCount(), len(nodes), dd+pd+rd)
-	if stats.OKCount() == len(nodes) {
-		log.Infof(logline)
-	} else {
-		log.Errorf(logline)
-	}
-
-	tb.Write(timeBuckets(times, 0.01))
-	err = rm.Error()
-	if err != nil {
-		log.Errorf("could not write time buckets: %s", err)
-	}
-
 	return nil
 }
 
-func discover() ([]string, error) {
-	b := broadcast.New(fw)
+func (m *Measure) discover() ([]string, error) {
+	b := broadcast.New(m.fw)
 
 	f, err := client.NewFilter(client.AgentFilter("emulated0"))
 	if err != nil {
@@ -248,4 +256,25 @@ func discover() ([]string, error) {
 	}
 
 	return b.Discover(ctx, broadcast.Filter(f), broadcast.Timeout(dt))
+}
+
+func (m *Measure) timeBuckets(times []time.Duration, interval float64) []string {
+	max := times[len(times)-1]
+	nbuckets := math.Round(float64(max.Seconds())/interval) + 1
+	buckets := make([]int, int(nbuckets))
+
+	for i := 0; i < len(buckets); i++ {
+		buckets[i] = 0
+	}
+
+	for _, t := range times {
+		buckets[int(math.Round(float64(t.Seconds())/interval))]++
+	}
+
+	out := make([]string, len(buckets))
+	for i, c := range buckets {
+		out[i] = strconv.Itoa(c)
+	}
+
+	return out
 }

@@ -48,7 +48,6 @@ plan emulator::start (
     "nodes" => $_nodes,
     "action" => "emulator.start",
     "silent" => true,
-    "post" => ["summarize"],
     "properties" => $_base_properties + $_cred_properties
   ) 
 

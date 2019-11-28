@@ -62,7 +62,13 @@ func Run() error {
 
 	switch command {
 	case "measure":
-		err = startMeasure()
+		var m *Measure
+		m, err = NewMeasure()
+		if err != nil {
+			return err
+		}
+
+		err = m.Measure()
 	case "emulate":
 		err = startEmulator()
 	default:
