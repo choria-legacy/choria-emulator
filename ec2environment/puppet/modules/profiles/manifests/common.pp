@@ -5,7 +5,7 @@ class profiles::common {
       owner => root;
 
     "/etc/systemd/system/choria-server.service.d/override.conf":
-      notify => [Exec["systemctl-reload"], Class["choria::service"]],
+      notify => [Exec["systemctl daemon-reload"], Class["choria::service"]],
       content => "[Service]\nLimitNOFILE=infinity";
   }
 
