@@ -56,7 +56,7 @@ action "status", :description => "Status of the running emulator" do
         :prompt      => "Monitor Port",
         :description => "Port to query for status",
         :type        => :integer,
-        :default     => 8080
+        :default     => 8080,
         :optional    => false
 
 
@@ -102,7 +102,7 @@ action "start", :description => "Start an emulator instance" do
         :prompt      => "Agents",
         :description => "Number of emulated* agents the emulator will host",
         :type        => :integer,
-        :default     => 1
+        :default     => 1,
         :optional    => false
 
 
@@ -110,7 +110,7 @@ action "start", :description => "Start an emulator instance" do
         :prompt      => "Subcollectives",
         :description => "Number of subcollective the emulator will join",
         :type        => :integer,
-        :default     => 1
+        :default     => 1,
         :optional    => false
 
 
@@ -127,7 +127,7 @@ action "start", :description => "Start an emulator instance" do
         :prompt      => "Instances",
         :description => "Number of simulated choria instances the emulator will host",
         :type        => :integer,
-        :default     => 1
+        :default     => 1,
         :optional    => false
 
 
@@ -135,7 +135,7 @@ action "start", :description => "Start an emulator instance" do
         :prompt      => "Monitor Port",
         :description => "Port to listen for monitoring requests",
         :type        => :integer,
-        :default     => 8080
+        :default     => 8080,
         :optional    => false
 
 
@@ -182,7 +182,7 @@ action "start_nats", :description => "Start a local NATS instance" do
         :prompt      => "Monitor Port",
         :description => "The port to listen on for monitoring requests",
         :type        => :integer,
-        :default     => 8222
+        :default     => 8222,
         :optional    => false
 
 
@@ -190,7 +190,7 @@ action "start_nats", :description => "Start a local NATS instance" do
         :prompt      => "Client Port",
         :description => "Port for clients to connect to",
         :type        => :integer,
-        :default     => 4222
+        :default     => 4222,
         :optional    => false
 
 
@@ -212,7 +212,7 @@ action "stop", :description => "Stops the running emulator instance" do
         :prompt      => "Monitor Port",
         :description => "Port to query for status",
         :type        => :integer,
-        :default     => 8080
+        :default     => 8080,
         :optional    => false
 
 

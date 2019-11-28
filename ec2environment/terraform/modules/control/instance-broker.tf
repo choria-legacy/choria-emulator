@@ -14,7 +14,7 @@ module "broker" {
   type               = "t2.medium"
   subnet_id          = var.network_id
   security_group_ids = concat(var.security_group_ids, [aws_security_group.nats.id])
-  user_data          = data.template_file.shell_init.rendered
+  user_data          = data.template_file.broker_init.rendered
   tags               = var.tags
 }
 
