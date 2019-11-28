@@ -5,6 +5,9 @@ mcollective::site_policies:
     facts: "*"
     classes: "*"
 
+choria::nightly_repo: true
+choria::version: latest
+
 classes:
   - roles::%{facts.role}
 
