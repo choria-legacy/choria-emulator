@@ -3,7 +3,7 @@ plan emulator::setup::download (
   Optional[String] $nats_url = undef,
 ) {
   $_emu_url = emulator::data("emulator_url", $emulator_url)
-  $_nats_url = emulator::data("emulator_url", $nats_url)
+  $_nats_url = emulator::data("nats_url", $nats_url)
   $emulators = emulator::all_nodes()
 
   info("Downloading choria-emulator from ${_emu_url}")
@@ -29,4 +29,6 @@ plan emulator::setup::download (
       "target" => "nats-server"
     }
   ) 
+
+  undef
 }

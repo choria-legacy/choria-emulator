@@ -39,9 +39,9 @@ plan emulator::start (
   if $nodes.length > 0 {
     $_nodes = $nodes
   } elsif $region {
-    $_nodes = emulator::regional_nodes($region)
+    $_nodes = emulator::regional_emulator_nodes($region)
   } else {
-    $_nodes = emulator::all_nodes()
+    $_nodes = emulator::emulator_nodes()
   }
 
   $results = choria::task("mcollective",

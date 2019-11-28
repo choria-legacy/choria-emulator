@@ -2,9 +2,9 @@ plan emulator::stop (
   Optional[String] $region=undef,
 ) {
   if $region {
-    $nodes = emulator::regional_nodes($region)
+    $nodes = emulator::regional_emulator_nodes($region)
   } else {
-    $nodes = emulator::all_nodes()
+    $nodes = emulator::emulator_nodes()
   }
 
   $results = choria::task("mcollective",

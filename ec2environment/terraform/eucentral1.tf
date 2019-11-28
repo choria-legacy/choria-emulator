@@ -66,3 +66,7 @@ output "shell" {
 output "emulator" {
   value = module.emulators.emulators
 }
+
+output "brokers" {
+  value = module.control.brokers
+}

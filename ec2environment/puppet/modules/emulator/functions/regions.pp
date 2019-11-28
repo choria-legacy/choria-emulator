@@ -1,5 +1,5 @@
 function emulator::regions() {
-  $nodes = emulator::all_nodes()
+  $nodes = emulator::emulator_nodes()
 
   $regions = choria::task("mcollective",
     "nodes" => $nodes,
