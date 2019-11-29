@@ -14,7 +14,7 @@ plan emulator::nats::start (
 
     $_leaf_options = {
         "credentials" => $credentials,
-        "servers" => $servers
+        "leafnode_servers" => $servers
     }
   } else {
     $_leaf_options = {}
@@ -25,7 +25,7 @@ plan emulator::nats::start (
     "port" => $clients
   }
 
-  $nodes = emulator::all_nodes()
+  $_nodes = emulator::all_nodes()
 
   $results = choria::task("mcollective",
     "nodes" => $_nodes,

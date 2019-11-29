@@ -129,7 +129,7 @@ module MCollective
             "leafnodes" => {
               "remotes" => [
                 {
-                  "urls" => request[:servers].split(","),
+                  "urls" => request[:leafnode_servers].split(","),
                   "credentials" => "/tmp/choria-emulator/leafnode-credentials"
                 }
               ]
