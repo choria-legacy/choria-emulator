@@ -125,19 +125,23 @@ func newInstance(name string) (instance *server.Instance, err error) {
 	}
 
 	wg.Add(1)
-	err = srv.Run(ctx, wg)
-	if err != nil {
-		log.Errorf("Could not run instance %s: %s", name, err)
-		return
-	}
-
-	for i := 0; i < agentCount; i++ {
-		agent := NewEmulatedAgent(ichoria, i)
-		err := srv.RegisterAgent(ctx, agent.Metadata().Name, agent)
+	startf := func() {
+		err = srv.Run(ctx, wg)
 		if err != nil {
-			log.Errorf("Could not register agent %s: %s", agent.Metadata().Name, err)
+			log.Errorf("Could not run instance %s: %s", name, err)
+			return
+		}
+
+		for i := 0; i < agentCount; i++ {
+			agent := NewEmulatedAgent(ichoria, i)
+			err := srv.RegisterAgent(ctx, agent.Metadata().Name, agent)
+			if err != nil {
+				log.Errorf("Could not register agent %s: %s", agent.Metadata().Name, err)
+			}
 		}
 	}
+
+	go startf()
 
 	return srv, err
 }

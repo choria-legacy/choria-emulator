@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/choria-io/go-choria/choria"
+	"github.com/choria-io/go-config"
 	"github.com/sirupsen/logrus"
 	"gopkg.in/alecthomas/kingpin.v2"
 )
@@ -48,7 +49,20 @@ func Run() error {
 		configFile = choria.UserConfig()
 	}
 
-	fw, err = choria.New(configFile)
+	cfg, err := config.NewConfig(configFile)
+	if err != nil {
+		return err
+	}
+
+	cfg.DisableTLS = !enableTLS
+	cfg.DisableTLSVerify = !enableTLSVerify
+	cfg.Choria.UseSRVRecords = false
+
+	if cfg.DisableTLS {
+		cfg.Choria.SSLDir = "/nonexisting"
+	}
+
+	fw, err = choria.NewWithConfig(cfg)
 	if err != nil {
 		return err
 	}

@@ -77,6 +77,14 @@ func (m *Measure) Measure() error {
 	m.MustOpen()
 	defer m.Close()
 
+	if protocolSecure {
+		log.Infof("Enabling Choria protocol security")
+		protocol.Secure = "true"
+	} else {
+		log.Infof("Disabling Choria protocol security")
+		protocol.Secure = "false"
+	}
+
 	log.Infof("Performing discovery of nodes with the emulator0 agent")
 	nodes, err := m.discover()
 	if err != nil {
