@@ -4,19 +4,21 @@ plan emulator::nats::start (
   Optional[String] $credentials=undef,
   Integer $monitor=8222,
   Integer $clients=4222,
+  Array[String] $nodes
 ) {
   if $leafnode {
     if !($servers and $credentials) {
         fail("leaf nodes need servers and credentials specified")
     }
 
-    info("Starting leafnodes")
+    info("Starting leafnode nats-servers")
 
     $_leaf_options = {
         "credentials" => base64(encode, file($credentials)),
         "leafnode_servers" => $servers
     }
   } else {
+    info("Starting standalone nats-server")
     $_leaf_options = {}
   }
   
@@ -25,10 +27,8 @@ plan emulator::nats::start (
     "port" => $clients
   }
 
-  $_nodes = emulator::all_nodes()
-
   $results = choria::task("mcollective",
-    "nodes" => $_nodes,
+    "nodes" => $nodes,
     "action" => "emulator.start_nats",
     "silent" => true,
     "properties" => $_common_options + $_leaf_options
