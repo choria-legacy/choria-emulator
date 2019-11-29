@@ -148,7 +148,7 @@ module MCollective
           }
         }
 
-        File.open("/tmp/choria-emulator/leafnode.json") do |f|
+        File.open("/tmp/choria-emulator/leafnode.json", "w") do |f|
           f.puts config.to_json
         end
 
