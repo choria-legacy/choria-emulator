@@ -139,20 +139,20 @@ module MCollective
 
         config = {
           "leafnodes" => {
-            "remotes" => {
+            "remotes" => [
               {
                 "urls" => request[:servers].split(","),
-                "credentials" => "/tmp/choria-emulator/leafnode-credentials",
+                "credentials" => "/tmp/choria-emulator/leafnode-credentials"
               }
-            }
+            ]
           }
         }
 
-        File.open("/tmp/choria-emulator/leafnode.conf") do |f|
+        File.open("/tmp/choria-emulator/leafnode.json") do |f|
           f.puts config.to_json
         end
 
-        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d --config /tmp/choria-emulator/leafnode.conf 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d --config /tmp/choria-emulator/leafnode.json 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
 
         sleep 1
 
