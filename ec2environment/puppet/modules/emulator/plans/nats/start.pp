@@ -2,7 +2,7 @@ plan emulator::nats::start (
   Boolean $leafnode=false,
   Optional[String] $servers=undef,
   Optional[String] $credentials=undef,
-  Integer $monitor=8080,
+  Integer $monitor=8222,
   Integer $clients=4222,
 ) {
   if $leafnode {
@@ -10,7 +10,7 @@ plan emulator::nats::start (
         fail("leaf nodes need servers and credentials specified")
     }
 
-    notice("Starting leafnodes")
+    info("Starting leafnodes")
 
     $_leaf_options = {
         "credentials" => base64(encode, file($credentials)),
@@ -36,9 +36,11 @@ plan emulator::nats::start (
 
   $results.each |$result| {
     if $result.ok {
-      info(sprintf("%s: %s: started: %s", $result["sender"], $result["statusmsg"], $result["data"]["status"]))
+      info(sprintf("%s: %s: started: %s", $result["sender"], $result["statusmsg"], $result["data"]["running"]))
     } else {
       error(sprintf("%s: %s", $result["sender"], $result["statusmsg"]))
     }
   }
+
+  undef
 }

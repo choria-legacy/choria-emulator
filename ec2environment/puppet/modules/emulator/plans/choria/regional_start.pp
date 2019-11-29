@@ -26,7 +26,7 @@ plan emulator::choria::regional_start (
   $regions.each |$region| {
     info("Starting ${region}")
 
-    choria::run_playbook("emulator::start",   
+    choria::run_playbook("emulator::choria::start",
       "region" => $region,
       "servers" => $_servers,
       "tls" => $tls,

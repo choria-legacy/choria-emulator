@@ -120,30 +120,40 @@ module MCollective
 
         additional_options = []
 
-        if request[:leafnode_servers]
-          reply.fail!("Credentials are required for leafnodes") unless request[:credentials]
-          creds = Base64.decode64(request[:credentials])
-          File.open("/tmp/choria-emulator/leafnode-credentials", "w") {|f| f.print(creds)}
-  
-          config = {
-            "leafnodes" => {
-              "remotes" => [
-                {
-                  "urls" => request[:leafnode_servers].split(","),
-                  "credentials" => "/tmp/choria-emulator/leafnode-credentials"
-                }
-              ]
-            }
+        config = {
+          "pidfile" => "/tmp/choria-emulator/nats-server.pid",
+          "http_port" => request[:monitor_port],
+          "listen" => "0.0.0.0:4222",
+          "logtime" => true,
+          "logfile" => "/tmp/choria-emulator/nats-server.log"
+          "leafnodes" => {
+            "port" => "0.0.0.0:7422"
           }
-  
-          File.open("/tmp/choria-emulator/leafnode.json", "w") do |f|
-            f.puts config.to_json
+        }
+
+        if request[:leafnode_servers]
+          leaf = [
+            {
+              "urls" => request[:leafnode_servers].split(","),
+              "credentials" => "/tmp/choria-emulator/leafnode-credentials"
+            }
+          ]
+
+          if request[:credentials]
+            creds = Base64.decode64(request[:credentials])
+            File.open("/tmp/choria-emulator/leafnode-credentials", "w") {|f| f.print(creds)}
+
+            leaf[0]["credentials"] = "/tmp/choria-emulator/leafnode-credentials"
           end
 
-          additional_options << ["--config /tmp/choria-emulator/leafnode.json"]
+          config["leafnodes"]["remotes"] = leaf
         end
 
-        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d %s 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port], additional_options.join(" ")], :stdout => (out=[]), :stderr => (err=[]))
+        File.open("/tmp/choria-emulator/nats-server.json", "w") do |f|
+          f.puts config.to_json
+        end
+
+        run('(/tmp/choria-emulator/nats-server --config /tmp/choria-emulator/nats-server.json 2>&1 >> /tmp/choria-emulator/nats-server.log &) &', :stdout => (out=[]), :stderr => (err=[]))
 
         sleep 1
 
