@@ -244,7 +244,7 @@
           "description": "Comma separated list of host:port pairs",
           "type": "string",
           "default": null,
-          "optional": true,
+          "optional": false,
           "validation": ".",
           "maxlength": 256
         },
@@ -253,7 +253,7 @@
           "description": "Base64 encoded credentials to use when connecting to NATS",
           "type": "string",
           "default": null,
-          "optional": true,
+          "optional": false,
           "validation": ".",
           "maxlength": 2048
         }

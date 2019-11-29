@@ -184,7 +184,7 @@ action "start_leafnode", :description => "Start a local NATS instance" do
         :type        => :string,
         :validation  => '.',
         :maxlength   => 2048,
-        :optional    => true
+        :optional    => false
 
 
   input :monitor_port,
@@ -209,7 +209,7 @@ action "start_leafnode", :description => "Start a local NATS instance" do
         :type        => :string,
         :validation  => '.',
         :maxlength   => 256,
-        :optional    => true
+        :optional    => false
 
 
 
