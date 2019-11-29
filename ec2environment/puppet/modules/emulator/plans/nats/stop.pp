@@ -1,9 +1,8 @@
 plan emulator::nats::stop () {
-) {
-  $nodes = emulator::all_nodes()
+  $_nodes = emulator::all_nodes()
 
   $results = choria::task("mcollective",
-    "nodes" => $nodes,
+    "nodes" => $_nodes,
     "action" => "emulator.stop_nats",
     "silent" => true,
     "properties" => {}
@@ -18,6 +17,4 @@ plan emulator::nats::stop () {
   }
 
   undef
-}
-
 }

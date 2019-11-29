@@ -13,7 +13,7 @@ plan emulator::nats::start (
     notice("Starting leafnodes")
 
     $_leaf_options = {
-        "credentials" => $credentials,
+        "credentials" => base64(encode, file($credentials)),
         "leafnode_servers" => $servers
     }
   } else {
