@@ -7,14 +7,21 @@ plan emulator::nats::start (
   Array[String] $nodes
 ) {
   if $leafnode {
-    if !($servers and $credentials) {
-        fail("leaf nodes need servers and credentials specified")
+    if !$servers {
+        fail("leaf nodes need servers specified")
     }
 
     info("Starting leafnode nats-servers")
 
-    $_leaf_options = {
+    if $credentials {
+      $_cred_options = {
         "credentials" => base64(encode, file($credentials)),
+      }
+    } else {
+      $_cred_options = {}
+    }
+
+    $_leaf_options = $_cred_options + {
         "leafnode_servers" => $servers
     }
   } else {

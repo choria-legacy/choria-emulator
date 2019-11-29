@@ -127,7 +127,7 @@ module MCollective
           "logtime" => true,
           "logfile" => "/tmp/choria-emulator/nats-server.log",
           "leafnodes" => {
-            "port" => "0.0.0.0:7422"
+            "listen" => "0.0.0.0:7422"
           }
         }
 
