@@ -10,7 +10,7 @@
 #                                              |
 #                                +-------------v-------------+
 #                                |                           |
-#           +-------------------->     NATS in eu-central-1  <-------------------------+
+#           +-------------------->         Synadia NGS       <-------------------------+
 #           |                    |                           |                         |
 #           |                    +--------------^------------+                         |
 #           |                                   |                                      |
@@ -27,21 +27,19 @@
 #  +--------+-------+                  +--------+-------+                      +--------+-------+
 #  | Choria Servers |                  | Choria Servers |                      | Choria Servers |
 #  +----------------+                  +----------------+                      +----------------+
-plan emulator::scenario::broker_leafnodes (
-  Optional[String] $broker_public_name,
-  Integer $instances = 500
+plan emulator::scenario::ngs_leafnodes (
+  String $credentials,
+  Integer $instances = 10
 ) {
-  $_pub_name = emulator::data("emulator_broker_name", $broker_public_name)
+  $_credentials = emulator::data("emulator_credentials", $credentials)
 
   choria::run_playbook("emulator::scenario::stop_all", {})
 
-  info("Starting NATS on broker instances")
-  choria::run_playbook("emulator::nats::brokers_start", {})
-
-  info("Starting NATS servers on emulators with leaf connections to ${_pub_name}")
+  info("Starting NATS servers on emulators with leaf connections to connect.ngs.global:7422")
   choria::run_playbook("emulator::nats::emulators_start", {
     "leafnode" => true,
-    "servers" => "nats://${_pub_name}:7422"
+    "servers" => "nats://connect.ngs.global:7422",
+    "credentials" => $_credentials
   })
 
   choria::run_playbook("emulator::choria::regional_start", {
