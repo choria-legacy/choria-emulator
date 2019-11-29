@@ -1,4 +1,4 @@
-plan emulator::nats::emulators_start (
+plan emulator::nats::brokers_start (
   Boolean $leafnode=false,
   Optional[String] $servers=undef,
   Optional[String] $credentials=undef,
