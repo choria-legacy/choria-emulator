@@ -1,4 +1,4 @@
-plan emulator::regional_start (
+plan emulator::choria::regional_start (
   String $servers,
   Boolean $tls=false,
   Optional[String] $credentials=undef,

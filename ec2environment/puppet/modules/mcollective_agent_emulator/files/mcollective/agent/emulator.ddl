@@ -175,7 +175,7 @@ action "start", :description => "Start an emulator instance" do
   end
 end
 
-action "start_leafnode", :description => "Start a local NATS instance" do
+action "start_nats", :description => "Start a local NATS instance" do
   display :failed
 
   input :credentials,
@@ -187,44 +187,14 @@ action "start_leafnode", :description => "Start a local NATS instance" do
         :optional    => false
 
 
-  input :monitor_port,
-        :prompt      => "Monitor Port",
-        :description => "The port to listen on for monitoring requests",
-        :type        => :integer,
-        :default     => 8222,
-        :optional    => false
-
-
-  input :port,
-        :prompt      => "Client Port",
-        :description => "Port for clients to connect to",
-        :type        => :integer,
-        :default     => 4222,
-        :optional    => false
-
-
-  input :servers,
-        :prompt      => "Servers to connect to",
-        :description => "Comma separated list of host:port pairs",
+  input :leafnode_servers,
+        :prompt      => "Leafnode servers to connect to",
+        :description => "Comma separated list of nats://host:port pairs",
         :type        => :string,
         :validation  => '.',
         :maxlength   => 256,
         :optional    => false
 
-
-
-
-  output :running,
-         :description => "true if the NATS started",
-         :display_as  => "Started"
-
-  summarize do
-    aggregate summary(:running)
-  end
-end
-
-action "start_nats", :description => "Start a local NATS instance" do
-  display :failed
 
   input :monitor_port,
         :prompt      => "Monitor Port",

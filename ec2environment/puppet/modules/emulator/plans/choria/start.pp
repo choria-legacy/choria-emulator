@@ -1,4 +1,4 @@
-plan emulator::start (
+plan emulator::choria::start (
   String $servers,
   Boolean $tls=false,
   Optional[String] $credentials=undef,

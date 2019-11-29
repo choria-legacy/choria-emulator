@@ -118,41 +118,32 @@ module MCollective
 
         FileUtils.chmod(0755, "/tmp/choria-emulator/nats-server")
 
-        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+        additional_options = []
 
-        sleep 1
-
-        reply[:running] = nats_running?
-      end
-
-      action "start_leafnode" do
-        unless File.exist?("/tmp/choria-emulator/nats-server")
-          reply.fail!("/tmp/choria-emulator/nats-server does not exist")
-        end
-
-        reply.fail!("NATS is already running") if nats_running?
-
-        FileUtils.chmod(0755, "/tmp/choria-emulator/nats-server")
-
-        creds = Base64.decode64(request[:credentials])
-        File.open("/tmp/choria-emulator/leafnode-credentials", "w") {|f| f.print(creds)}
-
-        config = {
-          "leafnodes" => {
-            "remotes" => [
-              {
-                "urls" => request[:servers].split(","),
-                "credentials" => "/tmp/choria-emulator/leafnode-credentials"
-              }
-            ]
+        if request[:leafnode_servers]
+          reply.fail!("Credentials are required for leafnodes") unless request[:credentials]
+          creds = Base64.decode64(request[:credentials])
+          File.open("/tmp/choria-emulator/leafnode-credentials", "w") {|f| f.print(creds)}
+  
+          config = {
+            "leafnodes" => {
+              "remotes" => [
+                {
+                  "urls" => request[:servers].split(","),
+                  "credentials" => "/tmp/choria-emulator/leafnode-credentials"
+                }
+              ]
+            }
           }
-        }
+  
+          File.open("/tmp/choria-emulator/leafnode.json", "w") do |f|
+            f.puts config.to_json
+          end
 
-        File.open("/tmp/choria-emulator/leafnode.json", "w") do |f|
-          f.puts config.to_json
+          additional_options << ["--config /tmp/choria-emulator/leafnode.json"]
         end
 
-        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d --config /tmp/choria-emulator/leafnode.json 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d %s 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port], additional_options.join(" ")], :stdout => (out=[]), :stderr => (err=[]))
 
         sleep 1
 

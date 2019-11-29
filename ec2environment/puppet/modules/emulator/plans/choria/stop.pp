@@ -1,4 +1,4 @@
-plan emulator::stop (
+plan emulator::choria::stop (
   Optional[String] $region=undef,
 ) {
   if $region {
