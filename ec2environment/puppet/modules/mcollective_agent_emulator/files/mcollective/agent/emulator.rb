@@ -125,6 +125,40 @@ module MCollective
         reply[:running] = nats_running?
       end
 
+      action "start_leafnode" do
+        unless File.exist?("/tmp/choria-emulator/nats-server")
+          reply.fail!("/tmp/choria-emulator/nats-server does not exist")
+        end
+
+        reply.fail!("NATS is already running") if nats_running?
+
+        FileUtils.chmod(0755, "/tmp/choria-emulator/nats-server")
+
+        creds = Base64.decode64(request[:credentials])
+        File.open("/tmp/choria-emulator/leafnode-credentials", "w") {|f| f.print(creds)}
+
+        config = {
+          "leafnodes" => {
+            "remotes" => {
+              {
+                "urls" => request[:servers].split(","),
+                "credentials" => "/tmp/choria-emulator/leafnode-credentials",
+              }
+            }
+          }
+        }
+
+        File.open("/tmp/choria-emulator/leafnode.conf") do |f|
+          f.puts config.to_json
+        end
+
+        run('(/tmp/choria-emulator/nats-server -T --log /tmp/choria-emulator/nats-server.log --pid /tmp/choria-emulator/nats-server.pid --port %d --http_port %d --config /tmp/choria-emulator/leafnode.conf 2>&1 >> /tmp/choria-emulator/nats-server.log &) &' % [request[:port], request[:monitor_port]], :stdout => (out=[]), :stderr => (err=[]))
+
+        sleep 1
+
+        reply[:running] = nats_running?
+      end
+
       action "stop_nats" do
         if nats_running?
           kill_pid("nats-server.pid")

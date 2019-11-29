@@ -223,6 +223,60 @@
       ]
     },
     {
+      "action": "start_leafnode",
+      "input": {
+        "port": {
+          "prompt": "Client Port",
+          "description": "Port for clients to connect to",
+          "type": "integer",
+          "default": 4222,
+          "optional": false
+        },
+        "monitor_port": {
+          "prompt": "Monitor Port",
+          "description": "The port to listen on for monitoring requests",
+          "type": "integer",
+          "default": 8222,
+          "optional": false
+        },
+        "servers": {
+          "prompt": "Servers to connect to",
+          "description": "Comma separated list of host:port pairs",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": ".",
+          "maxlength": 256
+        },
+        "credentials": {
+          "prompt": "Credentials",
+          "description": "Base64 encoded credentials to use when connecting to NATS",
+          "type": "string",
+          "default": null,
+          "optional": true,
+          "validation": ".",
+          "maxlength": 2048
+        }
+      },
+      "output": {
+        "running": {
+          "description": "true if the NATS started",
+          "display_as": "Started",
+          "default": null
+        }
+      },
+      "display": "failed",
+      "description": "Start a local NATS instance",
+      "aggregate": [
+        {
+          "function": "summary",
+          "args": [
+            "running"
+          ]
+        }
+      ]
+    },
+    {
       "action": "start_nats",
       "input": {
         "port": {
