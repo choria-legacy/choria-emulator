@@ -8,4 +8,11 @@ resource "aws_security_group" "nats" {
     protocol    = "tcp"
     cidr_blocks = var.emulator_networks
   }
+
+  ingress {
+    from_port   = 7422
+    to_port     = 7422
+    protocol    = "tcp"
+    cidr_blocks = var.emulator_networks
+  }
 }
