@@ -28,7 +28,7 @@ module "uswest1_emulators" {
   network_id         = module.uswest1_network.subnet_id
   security_group_ids = [module.uswest1_network.internal_security_group_id, module.uswest1_network.management_security_group_id]
   puppet_psk         = var.puppet_psk
-  emulator_count     = 2
+  # emulator_count     = 2
 
   providers = {
     aws = aws.uswest1
@@ -39,6 +39,6 @@ module "uswest1_emulators" {
   }
 }
 
-output "uswest1" {
+output "uswest1_emulators" {
   value = module.uswest1_emulators.emulators
 }

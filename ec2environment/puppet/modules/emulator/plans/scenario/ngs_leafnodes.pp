@@ -28,7 +28,7 @@
 #  | Choria Servers |                  | Choria Servers |                      | Choria Servers |
 #  +----------------+                  +----------------+                      +----------------+
 plan emulator::scenario::ngs_leafnodes (
-  String $credentials,
+  Optional[String] $credentials = undef,
   Integer $instances = 10
 ) {
   $_credentials = emulator::data("emulator_credentials", $credentials)

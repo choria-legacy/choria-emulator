@@ -1,10 +1,14 @@
 package emulator
 
 import (
+	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"math"
 	"path/filepath"
+	"sort"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 
@@ -17,20 +21,26 @@ import (
 )
 
 var (
-	forceDirect bool
-	testCount   int
-	payloadSize int
-	outDir      string
-	description string
+	forceDirect       bool
+	testCount         int
+	payloadSize       int
+	outDir            string
+	description       string
+	rpcTimeout        time.Duration
+	expectedNodeCount int
+	measureWorkers    int
 
 	dt time.Duration
 )
 
 type Measure struct {
-	TestDescription string `json:"description"`
-	OutputDir       string `json:"output_dir"`
-	PayloadSize     int    `json:"payload_size"`
-	Count           int    `json:"count"`
+	TestDescription string        `json:"description"`
+	OutputDir       string        `json:"output_dir"`
+	PayloadSize     int           `json:"payload_size"`
+	Count           int           `json:"count"`
+	TimeOut         time.Duration `json:"rpc_timeout"`
+	ExpectedNodes   int           `json:"expected_nodes"`
+	Workers         int           `json:"workers"`
 
 	sync.Mutex
 
@@ -46,6 +56,9 @@ func NewMeasure() (*Measure, error) {
 		OutputDir:       outDir,
 		PayloadSize:     payloadSize,
 		Count:           testCount,
+		TimeOut:         rpcTimeout,
+		ExpectedNodes:   expectedNodeCount,
+		Workers:         measureWorkers,
 		fw:              fw,
 	}, nil
 }
@@ -91,11 +104,13 @@ func (m *Measure) Measure() error {
 		return fmt.Errorf("could not perform discovery: %w", err)
 	}
 
-	if len(nodes) == 0 {
-		return fmt.Errorf("did not discover any nodes")
+	if len(nodes) != m.ExpectedNodes {
+		return fmt.Errorf("discovered %d nodes, expected %d", len(nodes), m.ExpectedNodes)
 	}
 
-	log.Infof("Performing %d tests against %d nodes with a payload of %d bytes, reports in %s", m.Count, len(nodes), m.PayloadSize, m.OutputDir)
+	log.Infof("Performing %d tests against %d nodes with a payload of %d bytes and timeout %v, reports in %s", m.Count, len(nodes), m.PayloadSize, m.TimeOut, m.OutputDir)
+
+	sort.Strings(nodes)
 
 	for i := 1; i <= testCount; i++ {
 		err = m.runTest(i, nodes)
@@ -121,12 +136,14 @@ func (m *Measure) saveTimeBuckets(times []time.Duration) error {
 }
 
 func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error {
-	dd := time.Duration(0)
-	if !forceDirect {
-		dd, err = stats.DiscoveryDuration()
-		if err != nil {
-			return fmt.Errorf("could not determine discovery time: %s", err)
-		}
+	j, err := json.Marshal(m)
+	if err != nil {
+		return fmt.Errorf("could not json marshal test config: %s", err)
+	}
+
+	err = ioutil.WriteFile(filepath.Join(m.OutputDir, "suite.json"), j, 0644)
+	if err != nil {
+		return fmt.Errorf("could not save test suit config: %s", err)
 	}
 
 	pd, err := stats.PublishDuration()
@@ -140,7 +157,7 @@ func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error
 	}
 
 	if c == 1 {
-		m.requestCSV.Write([]string{"test", "description", "payload_bytes", "expected", "discovered", "discovery_duration", "publish_duration", "request_duration", "failed", "ok", "noresponses", "unexpected", "responded"})
+		m.requestCSV.Write([]string{"test", "description", "payload_bytes", "expected", "discovered", "publish_duration", "request_duration", "failed", "ok", "noresponses", "unexpected", "responded"})
 	}
 
 	rstats := []string{
@@ -149,7 +166,6 @@ func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error
 		strconv.Itoa(payloadSize),
 		strconv.Itoa(len(nodes)),
 		strconv.Itoa(stats.DiscoveredCount()),
-		strconv.Itoa(int(dd)),
 		strconv.Itoa(int(pd)),
 		strconv.Itoa(int(rd)),
 		strconv.Itoa(stats.FailCount()),
@@ -164,7 +180,21 @@ func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error
 		return fmt.Errorf("could not write measurement: %s", err)
 	}
 
-	logline := fmt.Sprintf("REQUEST #: %-4d OK: %d / %d ELAPSED TIME: %v", c, stats.OKCount(), len(nodes), dd+pd+rd)
+	if len(stats.NoResponseFrom()) > 0 {
+		log.Errorf("Did not receive responses from %d nodes:", len(stats.NoResponseFrom()))
+		choria.SliceGroups(stats.NoResponseFrom(), 5, func(nodes []string) {
+			nr := []string{}
+			for _, n := range nodes {
+				if n != "" {
+					nr = append(nr, n)
+				}
+			}
+
+			log.Errorf(strings.Join(nr, ", "))
+		})
+	}
+
+	logline := fmt.Sprintf("REQUEST %s #: %-4d OK: %d / %d ELAPSED TIME: %v", stats.RequestID, c, stats.OKCount(), len(nodes), pd+rd)
 	if stats.OKCount() == len(nodes) {
 		log.Infof(logline)
 	} else {
@@ -220,21 +250,16 @@ func (m *Measure) runTest(c int, nodes []string) error {
 
 	opts := []mco.RequestOption{
 		mco.ReplyHandler(f),
+		mco.Timeout(m.TimeOut),
+		mco.Workers(m.Workers),
 	}
 
 	if forceDirect {
 		log.Debugf("...using %d discovered nodes in directed mode", len(nodes))
 		opts = append(opts, mco.Targets(nodes), mco.DirectRequest())
 	} else {
-		log.Debugf("...forcing discovery of the emulated0 nodes for %v", dt)
-		f, err := client.NewFilter(client.AgentFilter("emulated0"))
-		if err != nil {
-			return err
-		}
-
-		opts = append(opts, mco.BroadcastRequest())
-		opts = append(opts, mco.Filter(f))
-		opts = append(opts, mco.DiscoveryTimeout(dt))
+		log.Debugf("...using %d discovered nodes in directed mode", len(nodes))
+		opts = append(opts, mco.Targets(nodes), mco.BroadcastRequest())
 	}
 
 	log.Debugf("...starting request")

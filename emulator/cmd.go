@@ -30,9 +30,11 @@ func Run() error {
 	emulate.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
 	emulate.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
 	emulate.Flag("secure", "Enable Choria protocol security").Default("false").BoolVar(&protocolSecure)
+	emulate.Flag("audit", "Printf format to use for generating instance audit logs").StringVar(&auditLogFormat)
 
 	measure := app.Command("measure", "Perform requests and records various metrics")
 	measure.Arg("count", "Number of tests to run").Required().IntVar(&testCount)
+	measure.Arg("expect", "Number of nodes to expect from discovery").Required().IntVar(&expectedNodeCount)
 	measure.Arg("description", "Test scenario description").Required().StringVar(&description)
 	measure.Arg("outdir", "Directory to write reports to").Required().ExistingDirVar(&outDir)
 	measure.Flag("force-direct", "Force direct mode communication").BoolVar(&forceDirect)
@@ -42,6 +44,8 @@ func Run() error {
 	measure.Flag("tls", "Enable TLS on the NATS connections").Default("false").BoolVar(&enableTLS)
 	measure.Flag("verify", "Enable TLS certificate verifications on the NATS connections").Default("false").BoolVar(&enableTLSVerify)
 	measure.Flag("secure", "Enable Choria protocol security").Default("false").BoolVar(&protocolSecure)
+	measure.Flag("timeout", "RPC Request timeout").Default("10s").DurationVar(&rpcTimeout)
+	measure.Flag("workers", "Number of NATS worker connections to use for the test").Default("1").IntVar(&measureWorkers)
 
 	command := kingpin.MustParse(app.Parse(os.Args[1:]))
 

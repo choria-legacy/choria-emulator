@@ -63,7 +63,7 @@ output "shell" {
   value = module.control.shell
 }
 
-output "emulator" {
+output "eucentral_emulators" {
   value = module.emulators.emulators
 }
 

@@ -46,6 +46,7 @@ module MCollective
         args << "--agents %d" % request[:agents] if request[:agents]
         args << "--collectives %d" % request[:collectives] if request[:collectives]
         args << "--tls" if request[:tls]
+        args << "--audit /tmp/choria-emulator/audit-%s.log"
 
         if request[:credentials]
           creds = Base64.decode64(request[:credentials])

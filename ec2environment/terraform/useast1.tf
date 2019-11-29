@@ -38,6 +38,6 @@ module "useast1_emulators" {
   }
 }
 
-output "useast1" {
+output "useast1_emulators" {
   value = module.useast1_emulators.emulators
 }

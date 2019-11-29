@@ -27,6 +27,7 @@ var (
 	protocolSecure  bool
 	brokers         []string
 	credentials     string
+	auditLogFormat  string
 
 	err       error
 	ctx       context.Context
@@ -96,6 +97,12 @@ func newInstance(name string) (instance *server.Instance, err error) {
 	cfg.DisableTLSVerify = !enableTLSVerify
 	cfg.Choria.UseSRVRecords = false
 	cfg.Choria.SecurityProvider = "file"
+	cfg.RPCAudit = false
+
+	if auditLogFormat != "" {
+		cfg.RPCAudit = true
+		cfg.SetOption("plugin.rpcaudit.logfile", fmt.Sprintf(auditLogFormat, name))
+	}
 
 	if cfg.DisableTLS {
 		cfg.Choria.SSLDir = "/nonexisting"

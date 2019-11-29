@@ -1,6 +1,6 @@
 # Background
 
-When considering to build a large scale Choria network, one with more than 10 000 nodes, you have a number of things to consider when it comes to planning the optimal size of networks and network structure wrt Federation.
+When considering to build a large scale Choria network, ones with 10s of thousands of nodes, you have a number of things to consider when it comes to planning the optimal size of networks and network structure wrt Federation.
 
 It is likely that a single flat network will not perform to your needs and this is highly dependant on your workloads.  You have to answer these questions:
 
@@ -12,7 +12,7 @@ It is likely that a single flat network will not perform to your needs and this 
 
 You have to supply the targets for these that fit your workloads and style.
 
-With these targets, how do you figure out what are the right size networks? This repository provided tools to help you answer and validate these items.
+With these targets, how do you figure out what are the right size networks? This repository provides tools to help you answer and validate these items.
 
 The end result is a method to repeatedly and reliably study the performance of Choria under various configurations and topologies.  Armed with this you can determine optimal sizes for your Federated Networks etc. You'll be able to determine if your topology supports each of the target numbers you set above.
 
