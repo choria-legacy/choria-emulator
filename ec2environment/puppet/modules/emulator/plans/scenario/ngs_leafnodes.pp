@@ -42,6 +42,7 @@ plan emulator::scenario::ngs_leafnodes (
     "credentials" => $_credentials
   })
 
+  info("Starting ${instances} Choria Servers in each region")
   choria::run_playbook("emulator::choria::regional_start", {
     "servers" => "localhost:4222",
     "instances" => $instances

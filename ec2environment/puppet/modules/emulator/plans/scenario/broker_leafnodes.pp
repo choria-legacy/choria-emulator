@@ -44,6 +44,7 @@ plan emulator::scenario::broker_leafnodes (
     "servers" => "nats://${_pub_name}:7422"
   })
 
+  info("Starting ${instances} Choria Servers in each region")
   choria::run_playbook("emulator::choria::regional_start", {
     "servers" => "localhost:4222",
     "instances" => $instances
