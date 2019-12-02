@@ -14,6 +14,7 @@
 #           |                                   |                                       |
 #  +--------+-------+                  +--------+-------+                      +--------+-------+
 #  | Choria Servers |                  | Choria Servers |                      | Choria Servers |
+#  |    us-west-1   |                  |    us-east-1   |                      |  eu-central-1  |
 #  +----------------+                  +----------------+                      +----------------+
 plan emulator::scenario::ngs_basic (
   Optional[String] $credentials = undef,

@@ -16,6 +16,7 @@
 #           |                                   |                                       |
 #  +--------+-------+                  +--------+-------+                      +--------+-------+
 #  | Choria Servers |                  | Choria Servers |                      | Choria Servers |
+#  |    us-west-1   |                  |    us-east-1   |                      |  eu-central-1  |
 #  +----------------+                  +----------------+                      +----------------+
 plan emulator::scenario::broker_basic (
   Optional[String] $broker = undef,
