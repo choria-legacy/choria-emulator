@@ -73,7 +73,7 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 			mu.Unlock()
 		}
 
-		startf()
+		go startf()
 	}
 
 	return emulated, nil
@@ -131,7 +131,6 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		return
 	}
 
-	wg.Add(1)
 	startf := func() {
 		err = srv.Run(ctx, wg)
 		if err != nil {
@@ -148,6 +147,7 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		}
 	}
 
+	wg.Add(1)
 	go startf()
 
 	return srv, err
