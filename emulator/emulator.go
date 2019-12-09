@@ -56,7 +56,7 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 	instanceID, _ := choria.NewRequestID()
 
 	for i := 1; i <= instanceCount; i++ {
-		name := fmt.Sprintf("%s-%s-%d", name, instanceID[1:6], i)
+		name := fmt.Sprintf("%d-%s-%s.choria.local", i, name, instanceID[1:6])
 		log.Infof("Creating instance %s", name)
 
 		wg.Add(1)
