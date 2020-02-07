@@ -10,11 +10,11 @@ import (
 	"time"
 
 	"github.com/choria-io/go-choria/choria"
-	"github.com/choria-io/go-client/client"
-	"github.com/choria-io/go-client/discovery/broadcast"
-	"github.com/choria-io/go-protocol/protocol"
-	"github.com/choria-io/mcorpc-agent-provider/mcorpc"
-	mco "github.com/choria-io/mcorpc-agent-provider/mcorpc/client"
+	"github.com/choria-io/go-choria/client/client"
+	"github.com/choria-io/go-choria/client/discovery/broadcast"
+	"github.com/choria-io/go-choria/protocol"
+	"github.com/choria-io/go-choria/providers/agent/mcorpc"
+	mco "github.com/choria-io/go-choria/providers/agent/mcorpc/client"
 	cloudevents "github.com/cloudevents/sdk-go"
 	"github.com/nats-io/nuid"
 )
@@ -138,6 +138,8 @@ func (m *Measure) Measure() error {
 			log.Errorf("Test %d failed: %s", i, err)
 		}
 	}
+
+	m.eventsConn.Close()
 
 	return nil
 }

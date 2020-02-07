@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	mco "github.com/choria-io/mcorpc-agent-provider/mcorpc/client"
+	mco "github.com/choria-io/go-choria/providers/agent/mcorpc/client"
 )
 
 type MeasureResult struct {
