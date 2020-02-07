@@ -1,23 +1,22 @@
 package emulator
 
 import (
-	"encoding/json"
+	"context"
 	"fmt"
-	"io/ioutil"
-	"math"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"strings"
 	"sync"
 	"time"
 
 	"github.com/choria-io/go-choria/choria"
-	"github.com/choria-io/go-client/client"
-	"github.com/choria-io/go-client/discovery/broadcast"
-	"github.com/choria-io/go-protocol/protocol"
-	"github.com/choria-io/mcorpc-agent-provider/mcorpc"
-	mco "github.com/choria-io/mcorpc-agent-provider/mcorpc/client"
+	"github.com/choria-io/go-choria/client/client"
+	"github.com/choria-io/go-choria/client/discovery/broadcast"
+	"github.com/choria-io/go-choria/protocol"
+	"github.com/choria-io/go-choria/providers/agent/mcorpc"
+	mco "github.com/choria-io/go-choria/providers/agent/mcorpc/client"
+	cloudevents "github.com/cloudevents/sdk-go"
+	"github.com/nats-io/nuid"
 )
 
 var (
@@ -33,6 +32,11 @@ var (
 	dt time.Duration
 )
 
+type EventPublisher interface {
+	PublishRaw(target string, data []byte) error
+	Close()
+}
+
 type Measure struct {
 	TestDescription string        `json:"description"`
 	OutputDir       string        `json:"output_dir"`
@@ -41,6 +45,9 @@ type Measure struct {
 	TimeOut         time.Duration `json:"rpc_timeout"`
 	ExpectedNodes   int           `json:"expected_nodes"`
 	Workers         int           `json:"workers"`
+	ID              string        `json:"id"`
+
+	eventsConn EventPublisher
 
 	sync.Mutex
 
@@ -51,6 +58,12 @@ type Measure struct {
 }
 
 func NewMeasure() (*Measure, error) {
+	id, _ := fw.NewRequestID()
+	conn, err := fw.NewConnector(context.Background(), fw.MiddlewareServers, id, fw.Logger("cloudevents"))
+	if err != nil {
+		return nil, err
+	}
+
 	return &Measure{
 		TestDescription: description,
 		OutputDir:       outDir,
@@ -59,6 +72,8 @@ func NewMeasure() (*Measure, error) {
 		TimeOut:         rpcTimeout,
 		ExpectedNodes:   expectedNodeCount,
 		Workers:         measureWorkers,
+		ID:              nuid.New().Next(),
+		eventsConn:      conn,
 		fw:              fw,
 	}, nil
 }
@@ -98,6 +113,11 @@ func (m *Measure) Measure() error {
 		protocol.Secure = "false"
 	}
 
+	err := m.PublishEvent()
+	if err != nil {
+		log.Warnf("Cloud not publish cloud event: %s", err)
+	}
+
 	log.Infof("Performing discovery of nodes with the emulator0 agent")
 	nodes, err := m.discover()
 	if err != nil {
@@ -119,70 +139,40 @@ func (m *Measure) Measure() error {
 		}
 	}
 
+	m.eventsConn.Close()
+
 	return nil
 }
 
-func (m *Measure) saveTimes(times []time.Duration) error {
-	stimes := make([]string, len(times))
-	for i, t := range times {
-		stimes[i] = strconv.Itoa(int(t))
-	}
+func (m *Measure) newEvent(etype string) cloudevents.Event {
+	event := cloudevents.NewEvent("1.0")
+	event.SetType("io.choria.event." + etype)
+	event.SetSource("io.choria.choria-emulator.measure")
+	event.SetID(nuid.New().Next())
 
-	return m.timesCSV.Write(stimes)
+	return event
 }
 
-func (m *Measure) saveTimeBuckets(times []time.Duration) error {
-	return m.bucketsCSV.Write(m.timeBuckets(times, 0.01))
+func (m *Measure) PublishEvent() error {
+	event := m.newEvent("emulator.test_suite")
+	event.SetData(m)
+
+	return m.publishEvent(event)
 }
 
-func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error {
-	j, err := json.Marshal(m)
+func (m *Measure) publishEvent(event cloudevents.Event) error {
+	j, err := event.MarshalJSON()
 	if err != nil {
-		return fmt.Errorf("could not json marshal test config: %s", err)
+		return err
 	}
 
-	err = ioutil.WriteFile(filepath.Join(m.OutputDir, "suite.json"), j, 0644)
-	if err != nil {
-		return fmt.Errorf("could not save test suit config: %s", err)
-	}
+	return m.eventsConn.PublishRaw(event.Type(), j)
+}
 
-	pd, err := stats.PublishDuration()
-	if err != nil {
-		return fmt.Errorf("could not determine publish time: %s", err)
-	}
-
-	rd, err := stats.RequestDuration()
-	if err != nil {
-		return fmt.Errorf("could not determine total duration: %s", err)
-	}
-
-	if c == 1 {
-		m.requestCSV.Write([]string{"test", "description", "payload_bytes", "expected", "discovered", "publish_duration", "request_duration", "failed", "ok", "noresponses", "unexpected", "responded"})
-	}
-
-	rstats := []string{
-		strconv.Itoa(c),
-		description,
-		strconv.Itoa(payloadSize),
-		strconv.Itoa(len(nodes)),
-		strconv.Itoa(stats.DiscoveredCount()),
-		strconv.Itoa(int(pd)),
-		strconv.Itoa(int(rd)),
-		strconv.Itoa(stats.FailCount()),
-		strconv.Itoa(stats.OKCount()),
-		strconv.Itoa(len(stats.NoResponseFrom())),
-		strconv.Itoa(len(stats.UnexpectedResponseFrom())),
-		strconv.Itoa(stats.ResponsesCount()),
-	}
-
-	err = m.requestCSV.Write(rstats)
-	if err != nil {
-		return fmt.Errorf("could not write measurement: %s", err)
-	}
-
-	if len(stats.NoResponseFrom()) > 0 {
-		log.Errorf("Did not receive responses from %d nodes:", len(stats.NoResponseFrom()))
-		choria.SliceGroups(stats.NoResponseFrom(), 5, func(nodes []string) {
+func (m *Measure) recordStats(mr *MeasureResult) error {
+	if mr.NoResponses > 0 {
+		log.Errorf("Did not receive responses from %d nodes:", mr.NoResponses)
+		choria.SliceGroups(mr.requestStats.NoResponseFrom(), 5, func(nodes []string) {
 			nr := []string{}
 			for _, n := range nodes {
 				if n != "" {
@@ -194,30 +184,20 @@ func (m *Measure) saveRequestData(c int, nodes []string, stats *mco.Stats) error
 		})
 	}
 
-	logline := fmt.Sprintf("REQUEST %s #: %-4d OK: %d / %d ELAPSED TIME: %v", stats.RequestID, c, stats.OKCount(), len(nodes), pd+rd)
-	if stats.OKCount() == len(nodes) {
+	logline := fmt.Sprintf("REQUEST %s #: %-4d OK: %d / %d ELAPSED TIME: %v", mr.requestStats.RequestID, mr.Instance, mr.OKCount, m.ExpectedNodes, mr.RequestDuration)
+
+	if mr.OKCount == m.ExpectedNodes {
 		log.Infof(logline)
 	} else {
 		log.Errorf(logline)
 	}
 
-	return nil
-}
-
-func (m *Measure) recordStats(c int, nodes []string, stats *mco.Stats, times []time.Duration) error {
-	err := m.saveRequestData(c, nodes, stats)
-	if err != nil {
-		return fmt.Errorf("could not write request data: %s", err)
-	}
-
-	err = m.saveTimes(times)
-	if err != nil {
-		return fmt.Errorf("could not write times: %s", err)
-	}
-
-	err = m.saveTimeBuckets(times)
-	if err != nil {
-		return fmt.Errorf("could not write time buckets: %s", err)
+	errs := mr.SaveAll()
+	if len(errs) > 0 {
+		log.Errorf("Errors encountered while saving data")
+		for _, err := range errs {
+			log.Error(err)
+		}
 	}
 
 	return nil
@@ -235,13 +215,12 @@ func (m *Measure) runTest(c int, nodes []string) error {
 		return err
 	}
 
-	times := []time.Duration{}
+	result := NewMeasureResult(m)
+
 	var startTime time.Time
 
 	f := func(pr protocol.Reply, rpcr *mco.RPCReply) {
-		m.Lock()
-		times = append(times, time.Now().Sub(startTime))
-		m.Unlock()
+		result.RecordTime(time.Now().Sub(startTime))
 
 		if rpcr.Statuscode != mcorpc.OK {
 			log.Errorf("......response from %s: %s", pr.SenderID(), rpcr.Statusmsg)
@@ -265,12 +244,14 @@ func (m *Measure) runTest(c int, nodes []string) error {
 	log.Debugf("...starting request")
 
 	startTime = time.Now()
-	result, err := rpc.Do(ctx, "generate", &genRequest{payloadSize}, opts...)
+	rpcres, err := rpc.Do(ctx, "generate", &genRequest{payloadSize}, opts...)
 	if err != nil {
 		return err
 	}
 
-	err = m.recordStats(c, nodes, result.Stats(), times)
+	result.SetMCOResult(c, rpcres.Stats())
+
+	err = m.recordStats(result)
 	if err != nil {
 		log.Errorf("could not save stats: %s", err)
 	}
@@ -289,25 +270,4 @@ func (m *Measure) discover() ([]string, error) {
 	}
 
 	return b.Discover(ctx, broadcast.Filter(f), broadcast.Timeout(dt))
-}
-
-func (m *Measure) timeBuckets(times []time.Duration, interval float64) []string {
-	max := times[len(times)-1]
-	nbuckets := math.Round(float64(max.Seconds())/interval) + 1
-	buckets := make([]int, int(nbuckets))
-
-	for i := 0; i < len(buckets); i++ {
-		buckets[i] = 0
-	}
-
-	for _, t := range times {
-		buckets[int(math.Round(float64(t.Seconds())/interval))]++
-	}
-
-	out := make([]string, len(buckets))
-	for i, c := range buckets {
-		out[i] = strconv.Itoa(c)
-	}
-
-	return out
 }

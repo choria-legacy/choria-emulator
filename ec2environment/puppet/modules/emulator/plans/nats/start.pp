@@ -13,7 +13,7 @@ plan emulator::nats::start (
 
     info("Starting leafnode nats-servers")
 
-    if $credentials {
+    if $credentials and $credentials != "" {
       $_cred_options = {
         "credentials" => base64(encode, file($credentials)),
       }

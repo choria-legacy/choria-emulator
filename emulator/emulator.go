@@ -5,14 +5,14 @@ import (
 	"fmt"
 	"sync"
 
-	"github.com/choria-io/go-protocol/protocol"
+	"github.com/choria-io/go-choria/protocol"
 	"github.com/sirupsen/logrus"
 
-	"github.com/choria-io/go-config"
+	"github.com/choria-io/go-choria/config"
 
 	"github.com/choria-io/go-choria/choria"
+	gorpc "github.com/choria-io/go-choria/providers/agent/mcorpc/golang"
 	"github.com/choria-io/go-choria/server"
-	gorpc "github.com/choria-io/mcorpc-agent-provider/mcorpc/golang"
 )
 
 var (
@@ -73,7 +73,7 @@ func NewEmulator() (emulated []*server.Instance, err error) {
 			mu.Unlock()
 		}
 
-		startf()
+		go startf()
 	}
 
 	return emulated, nil
@@ -131,7 +131,6 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		return
 	}
 
-	wg.Add(1)
 	startf := func() {
 		err = srv.Run(ctx, wg)
 		if err != nil {
@@ -148,6 +147,7 @@ func newInstance(name string) (instance *server.Instance, err error) {
 		}
 	}
 
+	wg.Add(1)
 	go startf()
 
 	return srv, err
