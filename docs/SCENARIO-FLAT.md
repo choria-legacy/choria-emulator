@@ -55,7 +55,7 @@ loglevel = warn
 main_collective = mcollective
 securityprovider = choria
 plugin.choria.security.serializer = json
-plugin.choria.use_srv_records = false
+plugin.choria.use_srv = false
 ```
 
 Run the scenario using `measure-collective.rb --config emulator-client.cfg` with additional options for amount of tests etc
